@@ -47,11 +47,19 @@ class Board(BaseBoard):
 
     def piece_at(self, square: int) -> Piece | None:
         """Return the Piece on the given square, or None if empty."""
-        raise NotImplementedError("implement Stage 1 (Squares and Pieces)")
+        return self.pieces[square]
 
     def pieces_of(self, color: Color) -> Iterator[tuple[int, Piece]]:
         """Yield (square, piece) pairs for every piece of the given color."""
-        raise NotImplementedError("implement Stage 1 (Squares and Pieces)")
+        for i in range(64):
+            if self.pieces[i] != None:
+                if color == WHITE:
+                    if self.pieces[i].char.isupper():
+                        yield (i, self.piece_at(i))
+                else:
+                    if self.pieces[i].char.islower():
+                        yield (i, self.piece_at(i))
+
 
     # === Stage 2: Leapers ===
 

@@ -175,10 +175,38 @@ class Board(BaseBoard):
 
     def _pawn_moves(self, color: Color) -> list[Move]:
         """Pseudo-legal pawn moves for `color`. (No en passant or promotion yet.)"""
-        raise NotImplementedError("implement Stage 4 (pawn)")
+        direction = 1 if color == WHITE else -1
+        start_rank = 1 if color == WHITE else 6
+        moves = list()
+        pawns = list()
+        for i in range(64):
+            if color == WHITE:
+                if self.piece_at(i) is not None and self.piece_at(i).char == 'P':
+                    pawns.append(i)
+            else:
+                if self.piece_at(i) is not None and self.piece_at(i).char == 'p':
+                    pawns.append(i)
+
+        for p in pawns:
+            rank = rank_of(p)
+            np = p + (8 * direction)
+            if on_board(file_of(np), rank_of(np)) and self.piece_at(np) is None:
+                moves.append(Move(p, np))
+                if rank == start_rank:
+                    np = p + (16 * direction)
+                    if on_board(file_of(np), rank_of(np)) and self.piece_at(np) is None:
+                        moves.append(Move(p, np))
+            for c in [7, 9]:
+                np = p + c * direction
+                if on_board(file_of(np), rank_of(np)) and self.piece_at(np) is not None and self.piece_at(np).color != color:
+                    moves.append(Move(p, np))
+
+        return moves
 
     # === Wiring ===
 
     def pseudo_legal_moves(self) -> list[Move]:
         """All pseudo-legal moves for the side to move."""
-        raise NotImplementedError("implement Stage 4 (combine all piece moves)")
+        c = self.side_to_move.name
+        color = WHITE if c == 'WHITE' else BLACK
+        return self._knight_moves(color) + self._king_moves(color) + self._bishop_moves(color) + self._rook_moves(color) + self._queen_moves(color) + self._pawn_moves(color)

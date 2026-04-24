@@ -23,5 +23,5 @@ from chessdk import (
     sq,
 )
 
-Board = Board().from_fen('8/8/8/8/3B4/8/8/8 w - - 0 1')
-print(Board._bishop_moves(WHITE))
+Board = Board()
+print(Board.pseudo_legal_moves())

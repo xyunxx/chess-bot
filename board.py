@@ -65,11 +65,51 @@ class Board(BaseBoard):
 
     def _knight_moves(self, color: Color) -> list[Move]:
         """Pseudo-legal knight moves for `color`."""
-        raise NotImplementedError("implement Stage 2 (knight)")
+        l = list()
+        knights = list()
+        for i in range(64):
+            if color == WHITE:
+                if self.piece_at(i) is not None and self.piece_at(i).char == 'N':
+                    knights.append(i)
+            else:
+                if self.piece_at(i) is not None and self.piece_at(i).char == 'n':
+                    knights.append(i)
+        
+        for k in knights:
+            f = file_of(k)
+            r = rank_of(k)
+            for x, y in KNIGHT_OFFSETS:
+                file = f + x
+                rank = r + y
+                s = sq(file, rank)
+                if on_board(file, rank) and self.piece_at(s) is None:
+                    l.append(Move(k, s))
+                elif on_board(file, rank) and self.piece_at(s).color != color:
+                    l.append(Move(k, s))
+        return l
 
     def _king_moves(self, color: Color) -> list[Move]:
         """Pseudo-legal king moves for `color`. (No castling yet.)"""
-        raise NotImplementedError("implement Stage 2 (king)")
+        l = list()
+        for i in range(64):
+            if color == WHITE:
+                if self.piece_at(i) is not None and self.piece_at(i).char == 'K':
+                    king = i
+            else:
+                if self.piece_at(i) is not None and self.piece_at(i).char == 'k':
+                    king = i
+        
+        f = file_of(king)
+        r = rank_of(king)
+        for x, y in KING_OFFSETS:
+            file = f + x
+            rank = r + y
+            s = sq(file, rank)
+            if on_board(file, rank) and self.piece_at(s) is None:
+                l.append(Move(king, s))
+            elif on_board(file, rank) and self.piece_at(s).color != color:
+                l.append(Move(king, s))
+        return l
 
     # === Stage 3: Sliders ===
 

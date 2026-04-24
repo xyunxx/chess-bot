@@ -24,6 +24,4 @@ from chessdk import (
 )
 
 Board = Board()
-print(Board.pieces_of(WHITE))
-for i in Board.pieces_of(WHITE):
-    print(i)
+print(Board._knight_moves(BLACK))

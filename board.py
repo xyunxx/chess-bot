@@ -113,17 +113,63 @@ class Board(BaseBoard):
 
     # === Stage 3: Sliders ===
 
+    def _slide_moves(self, color, piece_kind):
+        chars = ['B', 'b', 'R', 'r', 'Q', 'q']
+        c_num = None
+        diagonal = False
+        horizontal = False
+        if piece_kind == BISHOP:
+            diagonal = True
+            c_num = 0 if color == WHITE else 1
+        elif piece_kind == ROOK:
+            horizontal = True
+            c_num = 2 if color == WHITE else 3
+        elif piece_kind == QUEEN:
+            horizontal = True
+            diagonal = True
+            c_num = 4 if color == WHITE else 5
+        
+        moves = list()
+        pieces = list()
+        for i in range(64):
+            if self.piece_at(i) is not None and self.piece_at(i).char == chars[c_num]:
+                pieces.append(i)
+
+        def calculate_moves(f, r, directions):
+            moves = list()
+            for x, y in directions:
+                file = f + x
+                rank = r + y
+                while on_board(file, rank) and self.piece_at(sq(file, rank)) is None:
+                    moves.append(Move(p, sq(file, rank)))
+                    file += x
+                    rank += y
+                if on_board(file, rank) and self.piece_at(sq(file, rank)).color != color:
+                    moves.append(Move(p, sq(file, rank)))
+            return moves
+
+        for p in pieces:
+            f = file_of(p)
+            r = rank_of(p)
+            if diagonal == True:
+                moves += calculate_moves(f, r, BISHOP_DIRECTIONS)
+            if horizontal == True:
+                moves += calculate_moves(f, r, ROOK_DIRECTIONS)
+        
+        return moves
+
     def _bishop_moves(self, color: Color) -> list[Move]:
         """Pseudo-legal bishop moves for `color`."""
-        raise NotImplementedError("implement Stage 3 (bishop)")
+        return self._slide_moves(color, BISHOP)
+        
 
     def _rook_moves(self, color: Color) -> list[Move]:
         """Pseudo-legal rook moves for `color`."""
-        raise NotImplementedError("implement Stage 3 (rook)")
+        return self._slide_moves(color, ROOK)
 
     def _queen_moves(self, color: Color) -> list[Move]:
         """Pseudo-legal queen moves for `color`."""
-        raise NotImplementedError("implement Stage 3 (queen)")
+        return self._slide_moves(color, QUEEN)
 
     # === Stage 4: Pawns ===
 

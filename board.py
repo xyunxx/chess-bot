@@ -68,9 +68,8 @@ class Board(BaseBoard):
                 file = f + x
                 rank = r + y
                 s = sq(file, rank)
-                if on_board(file, rank) and self.piece_at(s) is None:
-                    l.append(Move(k, s))
-                elif on_board(file, rank) and self.piece_at(s).color != color:
+                if on_board(file, rank) and \
+                        (self.piece_at(s) is None or self.piece_at(s).color != color):
                     l.append(Move(k, s))
         return l
 
@@ -102,8 +101,7 @@ class Board(BaseBoard):
             return moves
 
         for p, n in pieces:
-            f = file_of(p)
-            r = rank_of(p)
+            f, r = file_of(p), rank_of(p)
             if n.kind == QUEEN or n.kind == BISHOP:
                 moves += calculate_moves(f, r, BISHOP_DIRECTIONS)
             if n.kind == QUEEN or n.kind == ROOK:

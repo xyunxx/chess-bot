@@ -49,36 +49,22 @@ class Board(BaseBoard):
         """Return the Piece on the given square, or None if empty."""
         return self.pieces[square]
 
-    def pieces_of(self, color: Color) -> Iterator[tuple[int, Piece]]:
+    def pieces_of(self, color: Color, kind = None) -> Iterator[tuple[int, Piece]]:
         """Yield (square, piece) pairs for every piece of the given color."""
-        for i in range(64):
-            if self.pieces[i] != None:
-                if color == WHITE:
-                    if self.pieces[i].char.isupper():
-                        yield (i, self.piece_at(i))
-                else:
-                    if self.pieces[i].char.islower():
-                        yield (i, self.piece_at(i))
-
+        for (square, piece) in enumerate(self.pieces):
+            if piece and piece.color == color:
+                if (kind is None) or piece.kind == kind:
+                    yield (square, piece)
 
     # === Stage 2: Leapers ===
 
-    def _knight_moves(self, color: Color) -> list[Move]:
-        """Pseudo-legal knight moves for `color`."""
+    def _leaper_moves(self, color: Color, kind, offsets):
+        pieces = self.pieces_of(color, kind)
         l = list()
-        knights = list()
-        for i in range(64):
-            if color == WHITE:
-                if self.piece_at(i) is not None and self.piece_at(i).char == 'N':
-                    knights.append(i)
-            else:
-                if self.piece_at(i) is not None and self.piece_at(i).char == 'n':
-                    knights.append(i)
-        
-        for k in knights:
+        for k, n in pieces:
             f = file_of(k)
             r = rank_of(k)
-            for x, y in KNIGHT_OFFSETS:
+            for x, y in offsets:
                 file = f + x
                 rank = r + y
                 s = sq(file, rank)
@@ -88,52 +74,19 @@ class Board(BaseBoard):
                     l.append(Move(k, s))
         return l
 
+    def _knight_moves(self, color: Color) -> list[Move]:
+        """Pseudo-legal knight moves for `color`."""
+        return self._leaper_moves(color, KNIGHT, KNIGHT_OFFSETS)
+
     def _king_moves(self, color: Color) -> list[Move]:
         """Pseudo-legal king moves for `color`. (No castling yet.)"""
-        l = list()
-        for i in range(64):
-            if color == WHITE:
-                if self.piece_at(i) is not None and self.piece_at(i).char == 'K':
-                    king = i
-            else:
-                if self.piece_at(i) is not None and self.piece_at(i).char == 'k':
-                    king = i
-        
-        f = file_of(king)
-        r = rank_of(king)
-        for x, y in KING_OFFSETS:
-            file = f + x
-            rank = r + y
-            s = sq(file, rank)
-            if on_board(file, rank) and self.piece_at(s) is None:
-                l.append(Move(king, s))
-            elif on_board(file, rank) and self.piece_at(s).color != color:
-                l.append(Move(king, s))
-        return l
+        return self._leaper_moves(color, KING, KING_OFFSETS)
 
     # === Stage 3: Sliders ===
 
     def _slide_moves(self, color, piece_kind):
-        chars = ['B', 'b', 'R', 'r', 'Q', 'q']
-        c_num = None
-        diagonal = False
-        horizontal = False
-        if piece_kind == BISHOP:
-            diagonal = True
-            c_num = 0 if color == WHITE else 1
-        elif piece_kind == ROOK:
-            horizontal = True
-            c_num = 2 if color == WHITE else 3
-        elif piece_kind == QUEEN:
-            horizontal = True
-            diagonal = True
-            c_num = 4 if color == WHITE else 5
-        
         moves = list()
-        pieces = list()
-        for i in range(64):
-            if self.piece_at(i) is not None and self.piece_at(i).char == chars[c_num]:
-                pieces.append(i)
+        pieces = self.pieces_of(color, piece_kind)
 
         def calculate_moves(f, r, directions):
             moves = list()
@@ -148,14 +101,14 @@ class Board(BaseBoard):
                     moves.append(Move(p, sq(file, rank)))
             return moves
 
-        for p in pieces:
+        for p, n in pieces:
             f = file_of(p)
             r = rank_of(p)
-            if diagonal == True:
+            if n.kind == QUEEN or n.kind == BISHOP:
                 moves += calculate_moves(f, r, BISHOP_DIRECTIONS)
-            if horizontal == True:
+            if n.kind == QUEEN or n.kind == ROOK:
                 moves += calculate_moves(f, r, ROOK_DIRECTIONS)
-        
+
         return moves
 
     def _bishop_moves(self, color: Color) -> list[Move]:
@@ -178,16 +131,9 @@ class Board(BaseBoard):
         direction = 1 if color == WHITE else -1
         start_rank = 1 if color == WHITE else 6
         moves = list()
-        pawns = list()
-        for i in range(64):
-            if color == WHITE:
-                if self.piece_at(i) is not None and self.piece_at(i).char == 'P':
-                    pawns.append(i)
-            else:
-                if self.piece_at(i) is not None and self.piece_at(i).char == 'p':
-                    pawns.append(i)
+        pawns = self.pieces_of(color, PAWN)
 
-        for p in pawns:
+        for p, n in pawns:
             rank = rank_of(p)
             np = p + (8 * direction)
             if on_board(file_of(np), rank_of(np)) and self.piece_at(np) is None:
@@ -207,6 +153,5 @@ class Board(BaseBoard):
 
     def pseudo_legal_moves(self) -> list[Move]:
         """All pseudo-legal moves for the side to move."""
-        c = self.side_to_move.name
-        color = WHITE if c == 'WHITE' else BLACK
+        color = self.side_to_move
         return self._knight_moves(color) + self._king_moves(color) + self._bishop_moves(color) + self._rook_moves(color) + self._queen_moves(color) + self._pawn_moves(color)

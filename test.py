@@ -23,5 +23,5 @@ from chessdk import (
     sq,
 )
 
-Board = Board()
+Board = Board().from_fen('4k3/8/8/8/8/8/8/4K3 w - - 0 1')
 print(Board.pseudo_legal_moves())

@@ -36,6 +36,7 @@ from chessdk import (
     on_board,
     rank_of,
     sq,
+    MoveRecord,
 )
 from chessdk.base import BaseBoard
 
@@ -153,3 +154,35 @@ class Board(BaseBoard):
         """All pseudo-legal moves for the side to move."""
         color = self.side_to_move
         return self._knight_moves(color) + self._king_moves(color) + self._bishop_moves(color) + self._rook_moves(color) + self._queen_moves(color) + self._pawn_moves(color)
+    
+    # === Stage 5: Make and Unmake ===
+
+    def make_move(self, move: Move) -> None:
+        """Apply 'move' in place. Saves an undo record."""
+        m = MoveRecord(move, self.pieces[move.to_sq], move.to_sq, self.state.castling.copy(), self.state.en_passant, self.state.halfmove_clock)
+        self.pieces[move.to_sq] = self.pieces[move.from_sq]
+        self.pieces[move.from_sq] = None
+        self.state.side_to_move = WHITE if self.state.side_to_move == BLACK else BLACK
+        if self.pieces[move.to_sq].kind == PAWN or m.captured is not None:
+            self.state.halfmove_clock = 0
+        else:
+            self.state.halfmove_clock += 1
+        if self.state.side_to_move == WHITE: self.state.fullmove_number += 1
+        self.state.en_passant = None
+        self._history.append(m)
+
+    
+    def undo_move(self) -> None:
+        """Reverse the last make_move call."""
+        m = self._history.pop()
+        self.pieces[m.move.from_sq] = self.pieces[m.move.to_sq]
+        self.pieces[m.move.to_sq] = m.captured
+        self.state.side_to_move = WHITE if self.state.side_to_move == BLACK else BLACK
+        self.state.halfmove_clock = m.prev_halfmove
+        self.state.en_passant = m.prev_en_passant
+        self.state.castling = m.prev_castling
+        if self.state.side_to_move == BLACK: self.state.fullmove_number -= 1
+    
+    def __init__(self, state = None):
+        super().__init__(state)
+        self._history = []

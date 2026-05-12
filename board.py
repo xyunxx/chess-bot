@@ -37,6 +37,7 @@ from chessdk import (
     rank_of,
     sq,
     MoveRecord,
+    square_name,
 )
 from chessdk.base import BaseBoard
 
@@ -186,3 +187,79 @@ class Board(BaseBoard):
     def __init__(self, state = None):
         super().__init__(state)
         self._history = []
+
+    # === Stage 6: Attacks and Legality ===
+
+    def is_attacked(self, square: int, by_color: Color) -> bool:
+        file = file_of(square)
+        rank = rank_of(square)
+        direction = 1 if by_color == BLACK else -1
+
+        def leapers(offset, piece: Piece):
+            for x, y in offset:
+                nf = file + x
+                nr = rank + y
+                if on_board(nf, nr) and self.pieces[sq(nf, nr)] is not None and self.pieces[sq(nf, nr)].kind == piece and self.pieces[sq(nf, nr)].color == by_color:
+                    return True
+        
+        knight = leapers(KNIGHT_OFFSETS, KNIGHT) #Knight
+
+        if knight:
+            return True
+        
+        king = leapers(KING_OFFSETS, KING) #King
+        
+        if king:
+            return True
+        
+        def sliders(offset, piece: Piece):
+            for x, y in offset:
+                nf = file + x
+                nr = rank + y
+
+                while on_board(nf, nr) and self.pieces[sq(nf, nr)] is None:
+                    nf += x
+                    nr += y
+
+                if on_board(nf, nr) and self.pieces[sq(nf, nr)] is not None:
+                    if self.pieces[sq(nf, nr)].kind == piece or self.pieces[sq(nf, nr)].kind == QUEEN and self.pieces[sq(nf, nr)].color == by_color:
+                        return True
+        
+        rq = sliders(ROOK_DIRECTIONS, ROOK) # Rook and Queen
+
+        if rq:
+            return True
+        
+        bq = sliders(BISHOP_DIRECTIONS, BISHOP) # Bishop and Queen
+
+        if bq:
+            return True
+        
+        square1 = square + 7 * direction
+        square2 = square + 9 * direction
+
+        if on_board(file_of(square1), rank_of(square1)) and self.pieces[square1] is not None and self.pieces[square1].kind == PAWN and self.pieces[square1].color == by_color:
+            return True
+        
+        if on_board(file_of(square2), rank_of(square2)) and self.pieces[square2] is not None and self.pieces[square2].kind == PAWN and self.pieces[square2].color == by_color:
+            return True
+        
+        return False
+    
+    def is_in_check(self, color: Color | None = None) -> bool:
+        """True if 'color' (default: side to move) is in check."""
+        if color == None:
+            color = self.side_to_move
+        for i in self.pieces_of(color, KING):
+            king = i
+        return self.is_attacked(king[0], WHITE if color == BLACK else BLACK)
+    
+    def legal_moves(self) -> list[Move]:
+        """Pseudo-legal moves filtered to those that don't leave own king in check."""
+        legal = list()
+        for m in self.pseudo_legal_moves():
+            self.make_move(m)
+            if not self.is_in_check(WHITE if self.side_to_move == BLACK else BLACK):
+                legal.append(m)
+            self.undo_move()
+        return legal

@@ -21,7 +21,8 @@ from chessdk import (
     on_board,
     rank_of,
     sq,
+    parse_square,
 )
 
-Board = Board()
-print(Board.make_move(Move(8, 16)).kind == PAWN)
+b = Board()
+print(b.is_in_check(BLACK))

@@ -51,9 +51,9 @@ class Board(BaseBoard):
         """Return the Piece on the given square, or None if empty."""
         return self.pieces[square]
 
-    def pieces_of(self, color: Color, kind = None) -> Iterator[tuple[int, Piece]]:
+    def pieces_of(self, color: Color, kind=None) -> Iterator[tuple[int, Piece]]:
         """Yield (square, piece) pairs for every piece of the given color."""
-        for (square, piece) in enumerate(self.pieces):
+        for square, piece in enumerate(self.pieces):
             if piece and piece.color == color:
                 if (kind is None) or piece.kind == kind:
                     yield (square, piece)
@@ -70,8 +70,9 @@ class Board(BaseBoard):
                 file = f + x
                 rank = r + y
                 s = sq(file, rank)
-                if on_board(file, rank) and \
-                        (self.piece_at(s) is None or self.piece_at(s).color != color):
+                if on_board(file, rank) and (
+                    self.piece_at(s) is None or self.piece_at(s).color != color
+                ):
                     l.append(Move(k, s))
         return l
 
@@ -98,7 +99,10 @@ class Board(BaseBoard):
                     moves.append(Move(p, sq(file, rank)))
                     file += x
                     rank += y
-                if on_board(file, rank) and self.piece_at(sq(file, rank)).color != color:
+                if (
+                    on_board(file, rank)
+                    and self.piece_at(sq(file, rank)).color != color
+                ):
                     moves.append(Move(p, sq(file, rank)))
             return moves
 
@@ -114,7 +118,6 @@ class Board(BaseBoard):
     def _bishop_moves(self, color: Color) -> list[Move]:
         """Pseudo-legal bishop moves for `color`."""
         return self._slide_moves(color, BISHOP)
-        
 
     def _rook_moves(self, color: Color) -> list[Move]:
         """Pseudo-legal rook moves for `color`."""
@@ -144,7 +147,11 @@ class Board(BaseBoard):
                         moves.append(Move(p, np))
             for c in [7, 9]:
                 np = p + c * direction
-                if on_board(file_of(np), rank_of(np)) and self.piece_at(np) is not None and self.piece_at(np).color != color:
+                if (
+                    on_board(file_of(np), rank_of(np))
+                    and self.piece_at(np) is not None
+                    and self.piece_at(np).color != color
+                ):
                     moves.append(Move(p, np))
 
         return moves
@@ -154,37 +161,55 @@ class Board(BaseBoard):
     def pseudo_legal_moves(self) -> list[Move]:
         """All pseudo-legal moves for the side to move."""
         color = self.side_to_move
-        return self._knight_moves(color) + self._king_moves(color) + self._bishop_moves(color) + self._rook_moves(color) + self._queen_moves(color) + self._pawn_moves(color)
-    
+        return (
+            self._knight_moves(color)
+            + self._king_moves(color)
+            + self._bishop_moves(color)
+            + self._rook_moves(color)
+            + self._queen_moves(color)
+            + self._pawn_moves(color)
+        )
+
     # === Stage 5: Make and Unmake ===
 
     def make_move(self, move: Move) -> None:
-        """Apply 'move' in place. Saves an undo record."""
-        m = MoveRecord(move, self.pieces[move.to_sq], move.to_sq, self.state.castling.copy(), self.state.en_passant, self.state.halfmove_clock)
+        """Apply 'move' in place. Saves an undo record.
+
+        move: must be a pseudo-legal move already
+        """
+        m = MoveRecord(
+            move,
+            self.pieces[move.to_sq],
+            move.to_sq,
+            self.state.castling.copy(),  #
+            self.state.en_passant,
+            self.state.halfmove_clock,
+        )
         self.pieces[move.to_sq] = self.pieces[move.from_sq]
         self.pieces[move.from_sq] = None
-        self.state.side_to_move = WHITE if self.state.side_to_move == BLACK else BLACK
+        self.state.side_to_move = self.state.side_to_move.other
         if self.pieces[move.to_sq].kind == PAWN or m.captured is not None:
             self.state.halfmove_clock = 0
         else:
             self.state.halfmove_clock += 1
-        if self.state.side_to_move == WHITE: self.state.fullmove_number += 1
-        self.state.en_passant = None
+        if self.state.side_to_move == WHITE:
+            self.state.fullmove_number += 1
+        self.state.en_passant = None  # TODO
         self._history.append(m)
 
-    
     def undo_move(self) -> None:
         """Reverse the last make_move call."""
         m = self._history.pop()
         self.pieces[m.move.from_sq] = self.pieces[m.move.to_sq]
         self.pieces[m.move.to_sq] = m.captured
-        self.state.side_to_move = WHITE if self.state.side_to_move == BLACK else BLACK
+        self.state.side_to_move = self.state.side_to_move.other
         self.state.halfmove_clock = m.prev_halfmove
         self.state.en_passant = m.prev_en_passant
         self.state.castling = m.prev_castling
-        if self.state.side_to_move == BLACK: self.state.fullmove_number -= 1
-    
-    def __init__(self, state = None):
+        if self.state.side_to_move == BLACK:
+            self.state.fullmove_number -= 1
+
+    def __init__(self, state=None):
         super().__init__(state)
         self._history = []
 
@@ -199,19 +224,20 @@ class Board(BaseBoard):
             for x, y in offset:
                 nf = file + x
                 nr = rank + y
-                if on_board(nf, nr) and self.pieces[sq(nf, nr)] is not None and self.pieces[sq(nf, nr)].kind == piece and self.pieces[sq(nf, nr)].color == by_color:
+                if (
+                    on_board(nf, nr)
+                    and self.pieces[sq(nf, nr)] is not None
+                    and self.pieces[sq(nf, nr)].kind == piece
+                    and self.pieces[sq(nf, nr)].color == by_color
+                ):
                     return True
-        
-        knight = leapers(KNIGHT_OFFSETS, KNIGHT) #Knight
 
-        if knight:
+        if leapers(KNIGHT_OFFSETS, KNIGHT):
             return True
-        
-        king = leapers(KING_OFFSETS, KING) #King
-        
-        if king:
+
+        if leapers(KING_OFFSETS, KING):
             return True
-        
+
         def sliders(offset, piece: Piece):
             for x, y in offset:
                 nf = file + x
@@ -222,38 +248,51 @@ class Board(BaseBoard):
                     nr += y
 
                 if on_board(nf, nr) and self.pieces[sq(nf, nr)] is not None:
-                    if self.pieces[sq(nf, nr)].kind == piece or self.pieces[sq(nf, nr)].kind == QUEEN and self.pieces[sq(nf, nr)].color == by_color:
+                    if (
+                        self.pieces[sq(nf, nr)].kind == piece
+                        or self.pieces[sq(nf, nr)].kind == QUEEN
+                        and self.pieces[sq(nf, nr)].color == by_color
+                    ):
                         return True
-        
-        rq = sliders(ROOK_DIRECTIONS, ROOK) # Rook and Queen
+
+        rq = sliders(ROOK_DIRECTIONS, ROOK)  # Rook and Queen
 
         if rq:
             return True
-        
-        bq = sliders(BISHOP_DIRECTIONS, BISHOP) # Bishop and Queen
+
+        bq = sliders(BISHOP_DIRECTIONS, BISHOP)  # Bishop and Queen
 
         if bq:
             return True
-        
+
         square1 = square + 7 * direction
         square2 = square + 9 * direction
 
-        if on_board(file_of(square1), rank_of(square1)) and self.pieces[square1] is not None and self.pieces[square1].kind == PAWN and self.pieces[square1].color == by_color:
+        if (
+            on_board(file_of(square1), rank_of(square1))
+            and self.pieces[square1] is not None
+            and self.pieces[square1].kind == PAWN
+            and self.pieces[square1].color == by_color
+        ):
             return True
-        
-        if on_board(file_of(square2), rank_of(square2)) and self.pieces[square2] is not None and self.pieces[square2].kind == PAWN and self.pieces[square2].color == by_color:
+
+        if (
+            on_board(file_of(square2), rank_of(square2))
+            and self.pieces[square2] is not None
+            and self.pieces[square2].kind == PAWN
+            and self.pieces[square2].color == by_color
+        ):
             return True
-        
+
         return False
-    
+
     def is_in_check(self, color: Color | None = None) -> bool:
         """True if 'color' (default: side to move) is in check."""
-        if color == None:
+        if color is None:
             color = self.side_to_move
-        for i in self.pieces_of(color, KING):
-            king = i
+        king = next(self.pieces_of(color, KING))
         return self.is_attacked(king[0], WHITE if color == BLACK else BLACK)
-    
+
     def legal_moves(self) -> list[Move]:
         """Pseudo-legal moves filtered to those that don't leave own king in check."""
         legal = list()

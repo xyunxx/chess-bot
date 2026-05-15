@@ -81,8 +81,44 @@ class Board(BaseBoard):
         return self._leaper_moves(color, KNIGHT, KNIGHT_OFFSETS)
 
     def _king_moves(self, color: Color) -> list[Move]:
-        """Pseudo-legal king moves for `color`. (No castling yet.)"""
-        return self._leaper_moves(color, KING, KING_OFFSETS)
+        """Pseudo-legal king moves for `color`."""
+        castling = []
+        b1 = self.pieces[1]
+        c1 = self.pieces[2]
+        d1 = self.pieces[3]
+        e1 = self.pieces[4]
+        f1 = self.pieces[5]
+        g1 = self.pieces[6]
+        b8 = self.pieces[57]
+        c8 = self.pieces[58]
+        d8 = self.pieces[59]
+        e8 = self.pieces[60]
+        f8 = self.pieces[61]
+        g8 = self.pieces[62]
+        if color == WHITE:
+            if self.state.castling.white_kingside:
+                if self.pieces[f1] is None and self.pieces[g1] is None:
+                    if not is_in_check(color):
+                        if not is_attacked(f1, color.other) and not is_attacked(g1, color.other):
+                            castling.append(Move(e1, g1))
+            if self.state.castling.white_queenside:
+                if self.pieces[b1] is None and self.pieces[c1] is None and self.pieces[d1] is None:
+                    if not is_in_check(color):
+                        if not is_attacked(c1, color.other) and not is_attacked(d1, color.other):
+                            castling.append(Move(e1, c1))
+        else:
+            if self.state.castling.black_kingside:
+                if self.pieces[f8] is None and self.pieces[g8] is None:
+                    if not is_in_check(color):
+                        if not is_attacked(f8, color.other) and not is_attacked(g8, color.other):
+                            castling.append(Move(e8, g8))
+            if self.state.castling.black_queenside:
+                if self.pieces[b8] is None and self.pieces[c8] is None and self.pieces[d8] is None:
+                    if not is_in_check(color):
+                        if not is_attacked(c8, color.other) and not is_attacked(d8, color.other):
+                            castling.append(Move(e8, c8))
+
+        return self._leaper_moves(color, KING, KING_OFFSETS) + castling
 
     # === Stage 3: Sliders ===
 
@@ -172,7 +208,7 @@ class Board(BaseBoard):
 
     # === Stage 5: Make and Unmake ===
 
-    def make_move(self, move: Move) -> None:
+    def make_move(self, move: Move) -> None: #castling
         """Apply 'move' in place. Saves an undo record.
 
         move: must be a pseudo-legal move already

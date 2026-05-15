@@ -22,7 +22,8 @@ from chessdk import (
     rank_of,
     sq,
     parse_square,
+    MoveRecord,
 )
 
 b = Board()
-print(b.is_in_check(BLACK))
+print(b.state.castling.white_kingside)

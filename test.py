@@ -25,5 +25,5 @@ from chessdk import (
     MoveRecord,
 )
 
-b = Board()
-print(b.state.castling.white_kingside)
+b = Board().from_fen("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1")
+print(b.legal_moves())

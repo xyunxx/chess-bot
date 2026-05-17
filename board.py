@@ -83,39 +83,55 @@ class Board(BaseBoard):
     def _king_moves(self, color: Color) -> list[Move]:
         """Pseudo-legal king moves for `color`."""
         castling = []
-        b1 = self.pieces[1]
-        c1 = self.pieces[2]
-        d1 = self.pieces[3]
-        e1 = self.pieces[4]
-        f1 = self.pieces[5]
-        g1 = self.pieces[6]
-        b8 = self.pieces[57]
-        c8 = self.pieces[58]
-        d8 = self.pieces[59]
-        e8 = self.pieces[60]
-        f8 = self.pieces[61]
-        g8 = self.pieces[62]
+        b1 = 1
+        c1 = 2
+        d1 = 3
+        e1 = 4
+        f1 = 5
+        g1 = 6
+        b8 = 57
+        c8 = 58
+        d8 = 59
+        e8 = 60
+        f8 = 61
+        g8 = 62
         if color == WHITE:
             if self.state.castling.white_kingside:
                 if self.pieces[f1] is None and self.pieces[g1] is None:
-                    if not is_in_check(color):
-                        if not is_attacked(f1, color.other) and not is_attacked(g1, color.other):
+                    if not self.is_in_check(color):
+                        if not self.is_attacked(
+                            f1, color.other
+                        ) and not self.is_attacked(g1, color.other):
                             castling.append(Move(e1, g1))
             if self.state.castling.white_queenside:
-                if self.pieces[b1] is None and self.pieces[c1] is None and self.pieces[d1] is None:
-                    if not is_in_check(color):
-                        if not is_attacked(c1, color.other) and not is_attacked(d1, color.other):
+                if (
+                    self.pieces[b1] is None
+                    and self.pieces[c1] is None
+                    and self.pieces[d1] is None
+                ):
+                    if not self.is_in_check(color):
+                        if not self.is_attacked(
+                            c1, color.other
+                        ) and not self.is_attacked(d1, color.other):
                             castling.append(Move(e1, c1))
         else:
             if self.state.castling.black_kingside:
                 if self.pieces[f8] is None and self.pieces[g8] is None:
-                    if not is_in_check(color):
-                        if not is_attacked(f8, color.other) and not is_attacked(g8, color.other):
+                    if not self.is_in_check(color):
+                        if not self.is_attacked(
+                            f8, color.other
+                        ) and not self.is_attacked(g8, color.other):
                             castling.append(Move(e8, g8))
             if self.state.castling.black_queenside:
-                if self.pieces[b8] is None and self.pieces[c8] is None and self.pieces[d8] is None:
-                    if not is_in_check(color):
-                        if not is_attacked(c8, color.other) and not is_attacked(d8, color.other):
+                if (
+                    self.pieces[b8] is None
+                    and self.pieces[c8] is None
+                    and self.pieces[d8] is None
+                ):
+                    if not self.is_in_check(color):
+                        if not self.is_attacked(
+                            c8, color.other
+                        ) and not self.is_attacked(d8, color.other):
                             castling.append(Move(e8, c8))
 
         return self._leaper_moves(color, KING, KING_OFFSETS) + castling
@@ -208,21 +224,123 @@ class Board(BaseBoard):
 
     # === Stage 5: Make and Unmake ===
 
-    def make_move(self, move: Move) -> None: #castling
+    def make_move(self, move: Move) -> None:
         """Apply 'move' in place. Saves an undo record.
 
         move: must be a pseudo-legal move already
         """
+        a1 = 0
+        c1 = 2
+        d1 = 3
+        e1 = 4
+        f1 = 5
+        g1 = 6
+        h1 = 7
+        a8 = 56
+        c8 = 58
+        d8 = 59
+        e8 = 60
+        f8 = 61
+        g8 = 62
+        h8 = 63
         m = MoveRecord(
             move,
             self.pieces[move.to_sq],
             move.to_sq,
-            self.state.castling.copy(),  #
+            self.state.castling.copy(),
             self.state.en_passant,
             self.state.halfmove_clock,
         )
+
+        if self.pieces[move.to_sq] is not None and self.pieces[move.to_sq].kind == ROOK:
+            if move.to_sq == a1:
+                self.state.castling.white_queenside = False
+            elif move.to_sq == h1:
+                self.state.castling.white_kingside = False
+            elif move.to_sq == a8:
+                self.state.castling.black_queenside = False
+            elif move.to_sq == h8:
+                self.state.castling.black_kingside = False
+
         self.pieces[move.to_sq] = self.pieces[move.from_sq]
         self.pieces[move.from_sq] = None
+
+        if (
+            self.state.castling.white_kingside
+            or self.state.castling.white_queenside
+            or self.state.castling.black_kingside
+            or self.state.castling.black_queenside
+        ):
+            if (
+                move.from_sq == e1
+                and move.to_sq == g1
+                and next(self.pieces_of(WHITE, KING))[0] == g1
+                and self.state.castling.white_kingside
+            ):
+                self.pieces[f1] = self.pieces[h1]
+                self.pieces[h1] = None
+                self.state.castling.white_kingside = False
+                self.state.castling.white_queenside = False
+
+            elif (
+                move.from_sq == e1
+                and move.to_sq == c1
+                and next(self.pieces_of(WHITE, KING))[0] == c1
+                and self.state.castling.white_queenside
+            ):
+                self.pieces[d1] = self.pieces[a1]
+                self.pieces[a1] = None
+                self.state.castling.white_kingside = False
+                self.state.castling.white_queenside = False
+
+            elif (
+                move.from_sq == e8
+                and move.to_sq == g8
+                and next(self.pieces_of(BLACK, KING))[0] == g8
+                and self.state.castling.black_kingside
+            ):
+                self.pieces[f8] = self.pieces[h8]
+                self.pieces[h8] = None
+                self.state.castling.black_kingside = False
+                self.state.castling.black_queenside = False
+
+            elif (
+                move.from_sq == e8
+                and move.to_sq == c8
+                and next(self.pieces_of(BLACK, KING))[0] == c8
+                and self.state.castling.black_queenside
+            ):
+                self.pieces[d8] = self.pieces[a8]
+                self.pieces[a8] = None
+                self.state.castling.black_kingside = False
+                self.state.castling.black_queenside = False
+
+            elif self.pieces[move.to_sq].kind == KING:
+                if self.pieces[move.to_sq].color == WHITE:
+                    self.state.castling.white_kingside = False
+                    self.state.castling.white_queenside = False
+                else:
+                    self.state.castling.black_kingside = False
+                    self.state.castling.black_queenside = False
+
+            elif (
+                self.pieces[move.to_sq].kind == ROOK
+                and self.pieces[move.to_sq].color == WHITE
+            ):
+                if move.from_sq == a1:
+                    self.state.castling.white_queenside = False
+                elif move.from_sq == h1:
+                    self.state.castling.white_kingside = False
+
+            elif (
+                self.pieces[move.to_sq].kind == ROOK
+                and self.pieces[move.to_sq].color == BLACK
+            ):
+                if move.from_sq == a8:
+                    self.state.castling.black_queenside = False
+                elif move.from_sq == h8:
+                    self.state.castling.black_kingside = False
+
         self.state.side_to_move = self.state.side_to_move.other
         if self.pieces[move.to_sq].kind == PAWN or m.captured is not None:
             self.state.halfmove_clock = 0
@@ -233,12 +351,45 @@ class Board(BaseBoard):
         self.state.en_passant = None  # TODO
         self._history.append(m)
 
-    def undo_move(self) -> None:
+    def undo_move(self) -> None:  # change to reset castling
         """Reverse the last make_move call."""
+        a1 = 0
+        c1 = 2
+        d1 = 3
+        e1 = 4
+        f1 = 5
+        g1 = 6
+        h1 = 7
+        a8 = 56
+        c8 = 58
+        d8 = 59
+        e8 = 60
+        f8 = 61
+        g8 = 62
+        h8 = 63
         m = self._history.pop()
         self.pieces[m.move.from_sq] = self.pieces[m.move.to_sq]
         self.pieces[m.move.to_sq] = m.captured
         self.state.side_to_move = self.state.side_to_move.other
+        if (
+            self.pieces[m.move.from_sq].kind == KING
+            and m.move.from_sq == e1
+            or m.move.from_sq == e8
+        ):
+            if self.state.side_to_move == WHITE:
+                if m.move.to_sq == g1:
+                    self.pieces[h1] = self.pieces[f1]
+                    self.pieces[f1] = None
+                elif m.move.to_sq == c1:
+                    self.pieces[a1] = self.pieces[d1]
+                    self.pieces[d1] = None
+            else:
+                if m.move.to_sq == g8:
+                    self.pieces[h8] = self.pieces[f8]
+                    self.pieces[f8] = None
+                elif m.move.to_sq == c8:
+                    self.pieces[a8] = self.pieces[d8]
+                    self.pieces[d8] = None
         self.state.halfmove_clock = m.prev_halfmove
         self.state.en_passant = m.prev_en_passant
         self.state.castling = m.prev_castling
@@ -284,21 +435,16 @@ class Board(BaseBoard):
                     nr += y
 
                 if on_board(nf, nr) and self.pieces[sq(nf, nr)] is not None:
-                    if (
+                    if self.pieces[sq(nf, nr)].color == by_color and (
                         self.pieces[sq(nf, nr)].kind == piece
                         or self.pieces[sq(nf, nr)].kind == QUEEN
-                        and self.pieces[sq(nf, nr)].color == by_color
                     ):
                         return True
 
-        rq = sliders(ROOK_DIRECTIONS, ROOK)  # Rook and Queen
-
-        if rq:
+        if sliders(ROOK_DIRECTIONS, ROOK):
             return True
 
-        bq = sliders(BISHOP_DIRECTIONS, BISHOP)  # Bishop and Queen
-
-        if bq:
+        if sliders(BISHOP_DIRECTIONS, BISHOP):
             return True
 
         square1 = square + 7 * direction
@@ -327,14 +473,14 @@ class Board(BaseBoard):
         if color is None:
             color = self.side_to_move
         king = next(self.pieces_of(color, KING))
-        return self.is_attacked(king[0], WHITE if color == BLACK else BLACK)
+        return self.is_attacked(king[0], color.other)
 
     def legal_moves(self) -> list[Move]:
         """Pseudo-legal moves filtered to those that don't leave own king in check."""
         legal = list()
         for m in self.pseudo_legal_moves():
             self.make_move(m)
-            if not self.is_in_check(WHITE if self.side_to_move == BLACK else BLACK):
+            if not self.is_in_check(self.side_to_move.other):
                 legal.append(m)
             self.undo_move()
         return legal

@@ -16,4 +16,4 @@ def choose_move(board: Board, time_left_ms: int) -> Move:
     `time_left_ms` is how many milliseconds you have remaining in the match.
     For Week 1 this function is unused; later weeks replace it with real logic.
     """
-    raise NotImplementedError("choose_move: implement me in Week 3")
+    return board.legal_moves()[0]

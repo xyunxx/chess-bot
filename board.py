@@ -192,7 +192,13 @@ class Board(BaseBoard):
             rank = rank_of(p)
             np = p + (8 * direction)
             if on_board(file_of(np), rank_of(np)) and self.piece_at(np) is None:
-                moves.append(Move(p, np))
+                if rank_of(np) == 0 or rank_of(np) == 7:
+                    moves.append(Move(p, np, QUEEN))
+                    moves.append(Move(p, np, BISHOP))
+                    moves.append(Move(p, np, ROOK))
+                    moves.append(Move(p, np, KNIGHT))
+                else:
+                    moves.append(Move(p, np))
                 if rank == start_rank:
                     np = p + (16 * direction)
                     if on_board(file_of(np), rank_of(np)) and self.piece_at(np) is None:
@@ -204,7 +210,13 @@ class Board(BaseBoard):
                     and self.piece_at(np) is not None
                     and self.piece_at(np).color != color
                 ):
-                    moves.append(Move(p, np))
+                    if rank_of(np) == 0 or rank_of(np) == 7:
+                        moves.append(Move(p, np, QUEEN))
+                        moves.append(Move(p, np, BISHOP))
+                        moves.append(Move(p, np, ROOK))
+                        moves.append(Move(p, np, KNIGHT))
+                    else:
+                        moves.append(Move(p, np))
 
         return moves
 
@@ -262,7 +274,12 @@ class Board(BaseBoard):
             elif move.to_sq == h8:
                 self.state.castling.black_kingside = False
 
-        self.pieces[move.to_sq] = self.pieces[move.from_sq]
+        if move.promotion is not None:
+            self.pieces[move.to_sq] = Piece(
+                move.promotion, self.pieces[move.from_sq].color
+            )
+        else:
+            self.pieces[move.to_sq] = self.pieces[move.from_sq]
         self.pieces[move.from_sq] = None
 
         if (
@@ -368,7 +385,10 @@ class Board(BaseBoard):
         g8 = 62
         h8 = 63
         m = self._history.pop()
-        self.pieces[m.move.from_sq] = self.pieces[m.move.to_sq]
+        if m.move.promotion is not None:
+            self.pieces[m.move.from_sq] = Piece(PAWN, self.state.side_to_move.other)
+        else:
+            self.pieces[m.move.from_sq] = self.pieces[m.move.to_sq]
         self.pieces[m.move.to_sq] = m.captured
         self.state.side_to_move = self.state.side_to_move.other
         if (

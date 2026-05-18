@@ -9,6 +9,7 @@ from __future__ import annotations
 import random
 from board import Board
 from chessdk import Move
+from chessdk.evaluation import PIECE_VALUE
 
 
 def choose_move(board: Board, time_left_ms: int) -> Move:
@@ -17,4 +18,18 @@ def choose_move(board: Board, time_left_ms: int) -> Move:
     `time_left_ms` is how many milliseconds you have remaining in the match.
     For Week 1 this function is unused; later weeks replace it with real logic.
     """
-    return random.choice(board.legal_moves())
+    moves = board.legal_moves()
+    captures = [m for m in moves if board.piece_at(m.to_sq) is not None]
+    if captures:
+        m = None
+        for i in range(len(captures)):
+            score = (
+                PIECE_VALUE[board.piece_at(captures[i].to_sq).kind]
+                - PIECE_VALUE[board.piece_at(captures[i].from_sq).kind]
+            )
+            m = i if m is None or score > m else m
+        return captures[m]
+    return random.choice(moves)
+
+
+# Note will occationally crash, once was an illegal move and most other times is saying None has no attribute Kind

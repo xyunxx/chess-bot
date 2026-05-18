@@ -9,7 +9,10 @@ from __future__ import annotations
 import random
 from board import Board
 from chessdk import Move
-from chessdk.evaluation import PIECE_VALUE
+from chessdk.evaluation import PIECE_VALUE, min_attacker_value
+from chessdk import (
+    PAWN,
+)
 
 
 def choose_move(board: Board, time_left_ms: int) -> Move:
@@ -19,17 +22,39 @@ def choose_move(board: Board, time_left_ms: int) -> Move:
     For Week 1 this function is unused; later weeks replace it with real logic.
     """
     moves = board.legal_moves()
-    captures = [m for m in moves if board.piece_at(m.to_sq) is not None]
-    if captures:
-        m = None
-        for i in range(len(captures)):
-            score = (
-                PIECE_VALUE[board.piece_at(captures[i].to_sq).kind]
-                - PIECE_VALUE[board.piece_at(captures[i].from_sq).kind]
+    m = None
+    mscore = None
+    for i in range(len(moves)):
+        if (
+            board.pieces[moves[i].from_sq].kind == PAWN
+            and (
+                abs(moves[i].from_sq - moves[i].to_sq) != 8
+                or abs(moves[i].from_sq - moves[i].to_sq) != 16
             )
-            m = i if m is None or score > m else m
-        return captures[m]
-    return random.choice(moves)
+            and board.pieces[moves[i].to_sq] is None
+        ):
+            gain = PIECE_VALUE[PAWN]
+        else:
+            gain = (
+                PIECE_VALUE[board.piece_at(moves[i].to_sq).kind]
+                if board.piece_at(moves[i].to_sq) is not None
+                else 0
+            )
+        board.make_move(moves[i])
+        if (
+            min_attacker_value(board, moves[i].to_sq, board.side_to_move) is None
+            or min_attacker_value(board, moves[i].to_sq, board.side_to_move)
+            >= PIECE_VALUE[board.piece_at(moves[i].to_sq).kind]
+        ):
+            loss = 0
+        else:
+            loss = PIECE_VALUE[board.piece_at(moves[i].to_sq).kind]
+        board.undo_move()
+        score = gain - loss
+        if mscore is None or score > mscore:
+            m = i
+            mscore = score
+    return moves[m]
 
 
-# Note will occationally crash, once was an illegal move and most other times is saying None has no attribute Kind
+# note, occational errors and losing occational games to always capture

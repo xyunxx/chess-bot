@@ -22,8 +22,8 @@ def choose_move(board: Board, time_left_ms: int) -> Move:
     For Week 1 this function is unused; later weeks replace it with real logic.
     """
     moves = board.legal_moves()
-    m = None
     mscore = None
+    tied_scores = []
     for i in range(len(moves)):
         if (
             board.pieces[moves[i].from_sq].kind == PAWN
@@ -52,9 +52,9 @@ def choose_move(board: Board, time_left_ms: int) -> Move:
         board.undo_move()
         score = gain - loss
         if mscore is None or score > mscore:
-            m = i
             mscore = score
-    return moves[m]
-
-
-# note, occational errors and losing occational games to always capture
+            tied_scores = []
+            tied_scores.append(i)
+        elif score == mscore:
+            tied_scores.append(i)
+    return moves[random.choice(tied_scores)]

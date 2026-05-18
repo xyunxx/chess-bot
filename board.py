@@ -217,6 +217,18 @@ class Board(BaseBoard):
                         moves.append(Move(p, np, KNIGHT))
                     else:
                         moves.append(Move(p, np))
+                if (
+                    on_board(file_of(np), rank_of(np))
+                    and self.pieces[np] is None
+                    and self.en_passant == np
+                ):
+                    if rank_of(np) == 0 or rank_of(np) == 7:
+                        moves.append(Move(p, np, QUEEN))
+                        moves.append(Move(p, np, BISHOP))
+                        moves.append(Move(p, np, ROOK))
+                        moves.append(Move(p, np, KNIGHT))
+                    else:
+                        moves.append(Move(p, np))
 
         return moves
 
@@ -278,6 +290,20 @@ class Board(BaseBoard):
             self.pieces[move.to_sq] = Piece(
                 move.promotion, self.pieces[move.from_sq].color
             )
+        elif (
+            self.state.en_passant is not None
+            and self.pieces[move.from_sq].kind == PAWN
+            and move.to_sq == self.en_passant
+        ):
+            self.pieces[move.to_sq] = self.pieces[move.from_sq]
+            s = (
+                move.to_sq - 8
+                if self.pieces[move.to_sq].color == WHITE
+                else move.to_sq + 8
+            )
+            m.captured = self.pieces[s]
+            m.captured_square = s
+            self.pieces[s] = None
         else:
             self.pieces[move.to_sq] = self.pieces[move.from_sq]
         self.pieces[move.from_sq] = None
@@ -365,7 +391,17 @@ class Board(BaseBoard):
             self.state.halfmove_clock += 1
         if self.state.side_to_move == WHITE:
             self.state.fullmove_number += 1
-        self.state.en_passant = None  # TODO
+        if (
+            self.pieces[move.to_sq].kind == PAWN
+            and abs(move.to_sq - move.from_sq) == 16
+        ):
+            self.state.en_passant = (
+                move.to_sq - 8
+                if self.pieces[move.to_sq].color == WHITE
+                else move.to_sq + 8
+            )
+        else:
+            self.state.en_passant = None
         self._history.append(m)
 
     def undo_move(self) -> None:  # change to reset castling
@@ -389,8 +425,10 @@ class Board(BaseBoard):
             self.pieces[m.move.from_sq] = Piece(PAWN, self.state.side_to_move.other)
         else:
             self.pieces[m.move.from_sq] = self.pieces[m.move.to_sq]
-        self.pieces[m.move.to_sq] = m.captured
+        self.pieces[m.captured_square] = m.captured
         self.state.side_to_move = self.state.side_to_move.other
+        if m.move.to_sq != m.captured_square:
+            self.pieces[m.move.to_sq] = None
         if (
             self.pieces[m.move.from_sq].kind == KING
             and m.move.from_sq == e1

@@ -6,6 +6,7 @@ come back to this in Week 3 when we integrate UCI and submit to the tournament.
 
 from __future__ import annotations
 
+import random
 from board import Board
 from chessdk import Move
 
@@ -16,4 +17,4 @@ def choose_move(board: Board, time_left_ms: int) -> Move:
     `time_left_ms` is how many milliseconds you have remaining in the match.
     For Week 1 this function is unused; later weeks replace it with real logic.
     """
-    return board.legal_moves()[0]
+    return random.choice(board.legal_moves())

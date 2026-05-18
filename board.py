@@ -209,6 +209,7 @@ class Board(BaseBoard):
                     on_board(file_of(np), rank_of(np))
                     and self.piece_at(np) is not None
                     and self.piece_at(np).color != color
+                    and abs(file_of(p) - file_of(np)) == 1
                 ):
                     if rank_of(np) == 0 or rank_of(np) == 7:
                         moves.append(Move(p, np, QUEEN))
@@ -221,6 +222,7 @@ class Board(BaseBoard):
                     on_board(file_of(np), rank_of(np))
                     and self.pieces[np] is None
                     and self.en_passant == np
+                    and abs(file_of(p) - file_of(np)) == 1
                 ):
                     if rank_of(np) == 0 or rank_of(np) == 7:
                         moves.append(Move(p, np, QUEEN))

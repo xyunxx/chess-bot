@@ -40,6 +40,8 @@ def choose_move(board: Board, time_left_ms: int) -> Move:
                 if board.piece_at(moves[i].to_sq) is not None
                 else 0
             )
+        if moves[i].promotion is not None:
+            gain += PIECE_VALUE[moves[i].promotion]
         board.make_move(moves[i])
         if (
             min_attacker_value(board, moves[i].to_sq, board.side_to_move) is None

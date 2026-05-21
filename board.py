@@ -224,13 +224,7 @@ class Board(BaseBoard):
                     and self.en_passant == np
                     and abs(file_of(p) - file_of(np)) == 1
                 ):
-                    if rank_of(np) == 0 or rank_of(np) == 7:
-                        moves.append(Move(p, np, QUEEN))
-                        moves.append(Move(p, np, BISHOP))
-                        moves.append(Move(p, np, ROOK))
-                        moves.append(Move(p, np, KNIGHT))
-                    else:
-                        moves.append(Move(p, np))
+                    moves.append(Move(p, np))
 
         return moves
 

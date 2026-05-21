@@ -9,7 +9,7 @@ from __future__ import annotations
 import random
 from board import Board
 from chessdk import Move
-from chessdk.evaluation import PIECE_VALUE, min_attacker_value
+from chessdk import PIECE_VALUE, min_attacker_value
 from chessdk import (
     PAWN,
 )

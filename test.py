@@ -37,21 +37,4 @@ def perft(board: Board, depth: int) -> int:
     return total
 
 
-print(
-    perft(
-        Board().from_fen("rnbqkbnr/1ppppppp/8/p7/8/7P/PPPPPPP1/RNBQKBNR w KQkq - 0 2"),
-        1,
-    )
-)  # a2a3 into h3h4 extra
-# print(
-#     perft(
-#         Board().from_fen(
-#             "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1"
-#         ),
-#         2,
-#     )
-# )  # a2a3 into h3a3 extra
-# a2a4 into h3a3 extra
-# f3h5 into a7h5 extra
-
-# all pawns that cross from the h file into the a file or the other way around
+print(Board().from_fen('B7/3k4/8/8/6Pp/7P/8/5K2 b - - 0 43').legal_moves())

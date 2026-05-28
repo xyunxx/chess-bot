@@ -50,7 +50,10 @@ def choose_move(board: Board, time_left_ms: int) -> Move:
         ):
             loss = 0
         else:
-            loss = PIECE_VALUE[board.piece_at(moves[i].to_sq).kind]
+            if moves[i].promotion is not None:
+                loss = PIECE_VALUE[PAWN]
+            else:
+                loss = PIECE_VALUE[board.piece_at(moves[i].to_sq).kind]
         board.undo_move()
         score = gain - loss
         if mscore is None or score > mscore:

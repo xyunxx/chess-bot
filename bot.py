@@ -8,11 +8,8 @@ from __future__ import annotations
 
 import random
 from board import Board
-from chessdk import Move
-from chessdk import PIECE_VALUE, min_attacker_value
-from chessdk import (
-    PAWN,
-)
+from chessdk import Move, PIECE_VALUE, min_attacker_value, PAWN, WHITE, BLACK
+from evaluation import evaluate
 
 
 def choose_move(board: Board, time_left_ms: int) -> Move:
@@ -22,44 +19,35 @@ def choose_move(board: Board, time_left_ms: int) -> Move:
     For Week 1 this function is unused; later weeks replace it with real logic.
     """
     moves = board.legal_moves()
+    side = board.side_to_move
     mscore = None
     tied_scores = []
     for i in range(len(moves)):
-        if (
-            board.pieces[moves[i].from_sq].kind == PAWN
-            and (
-                abs(moves[i].from_sq - moves[i].to_sq) != 8
-                or abs(moves[i].from_sq - moves[i].to_sq) != 16
-            )
-            and board.pieces[moves[i].to_sq] is None
-        ):
-            gain = PIECE_VALUE[PAWN]
-        else:
-            gain = (
-                PIECE_VALUE[board.piece_at(moves[i].to_sq).kind]
-                if board.piece_at(moves[i].to_sq) is not None
-                else 0
-            )
-        if moves[i].promotion is not None:
-            gain += PIECE_VALUE[moves[i].promotion]
         board.make_move(moves[i])
+        pos_score = evaluate(board)
         if (
-            min_attacker_value(board, moves[i].to_sq, board.side_to_move) is None
-            or min_attacker_value(board, moves[i].to_sq, board.side_to_move)
+            min_attacker_value(board, moves[i].to_sq, side) is None
+            or min_attacker_value(board, moves[i].to_sq, side)
             >= PIECE_VALUE[board.piece_at(moves[i].to_sq).kind]
         ):
-            loss = 0
+            hang = 0
         else:
             if moves[i].promotion is not None:
-                loss = PIECE_VALUE[PAWN]
+                hang = PIECE_VALUE[PAWN]
             else:
-                loss = PIECE_VALUE[board.piece_at(moves[i].to_sq).kind]
+                hang = PIECE_VALUE[board.piece_at(moves[i].to_sq).kind]
         board.undo_move()
-        score = gain - loss
-        if mscore is None or score > mscore:
+        sign = 1 if side == WHITE else -1
+        score = pos_score - sign * hang
+        if (
+            mscore is None
+            or (side == WHITE and score > mscore)
+            or (side == BLACK and score < mscore)
+        ):
             mscore = score
             tied_scores = []
             tied_scores.append(i)
         elif score == mscore:
             tied_scores.append(i)
+
     return moves[random.choice(tied_scores)]

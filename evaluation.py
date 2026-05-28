@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from board import Board
 
-from chessdk import MATE_SCORE, WHITE, PIECE_VALUE_KAUFMAN, PIECE_VALUE_CLASSIC
+from chessdk import MATE_SCORE, WHITE, PIECE_VALUE_KAUFMAN
 
 
 def evaluate(board: Board) -> int:
@@ -27,11 +27,11 @@ def evaluate(board: Board) -> int:
         else:  # stalemate
             return 0
 
-    eval = 0
+    e = 0
     for p in board.pieces:
         if p is not None:
             if p.color == WHITE:
-                eval += PIECE_VALUE_KAUFMAN[p.kind]
+                e += PIECE_VALUE_KAUFMAN[p.kind]
             else:
-                eval -= PIECE_VALUE_KAUFMAN[p.kind]
-    return eval
+                e -= PIECE_VALUE_KAUFMAN[p.kind]
+    return e

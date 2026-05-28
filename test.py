@@ -25,6 +25,8 @@ from chessdk import (
     MoveRecord,
 )
 
+from evaluation import evaluate
+
 
 def perft(board: Board, depth: int) -> int:
     if depth == 0:
@@ -37,4 +39,4 @@ def perft(board: Board, depth: int) -> int:
     return total
 
 
-print(Board().from_fen('B7/3k4/8/8/6Pp/7P/8/5K2 b - - 0 43').legal_moves())
+print(evaluate(Board()))

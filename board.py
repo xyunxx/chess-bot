@@ -423,11 +423,10 @@ class Board(BaseBoard):
             self.pieces[m.move.from_sq] = self.pieces[m.move.to_sq]
         self.pieces[m.captured_square] = m.captured
         self.state.side_to_move = self.state.side_to_move.other
-        if m.move.to_sq != m.captured_square: # Implies en passant capture
+        if m.move.to_sq != m.captured_square:  # Implies en passant capture
             self.pieces[m.move.to_sq] = None
-        if (
-            self.pieces[m.move.from_sq].kind == KING
-            and (m.move.from_sq == e1 or m.move.from_sq == e8)
+        if self.pieces[m.move.from_sq].kind == KING and (
+            m.move.from_sq == e1 or m.move.from_sq == e8
         ):
             if self.state.side_to_move == WHITE:
                 if m.move.to_sq == g1:

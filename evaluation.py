@@ -16,22 +16,38 @@ from __future__ import annotations
 
 from board import Board
 
-from chessdk import MATE_SCORE, WHITE, PIECE_VALUE_KAUFMAN
+from chessdk import (
+    MATE_SCORE,
+    WHITE,
+    PIECE_VALUE_KAUFMAN,
+    DEFAULT_PSTS,
+    PAWN,
+    KING,
+    sq,
+    file_of,
+    rank_of,
+)
 
 
 def evaluate(board: Board) -> int:
     """Return a centipawn score for the position from White's point of view."""
+    side = board.side_to_move
     if board.legal_moves() == []:
         if board.is_in_check():  # checkmate
-            return -MATE_SCORE if board.side_to_move == WHITE else MATE_SCORE
+            return -MATE_SCORE if side == WHITE else MATE_SCORE
         else:  # stalemate
             return 0
 
     e = 0
-    for p in board.pieces:
+    pst = 0
+    for n, p in enumerate(board.pieces):
         if p is not None:
+            piece = p.kind
             if p.color == WHITE:
-                e += PIECE_VALUE_KAUFMAN[p.kind]
+                e += PIECE_VALUE_KAUFMAN[piece]
+                pst += DEFAULT_PSTS[piece][n]
             else:
-                e -= PIECE_VALUE_KAUFMAN[p.kind]
-    return e
+                e -= PIECE_VALUE_KAUFMAN[piece]
+                pst += DEFAULT_PSTS[piece][sq(file_of(n), 7 - rank_of(n))]
+
+    return e + pst

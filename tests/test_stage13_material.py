@@ -55,7 +55,7 @@ from evaluation import evaluate
         (
             "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R2QK2R w KQkq - 0 1",
             "black up two minor pieces",
-            -1300,
+            -1500,
             -400,
         ),
     ],

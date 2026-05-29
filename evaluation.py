@@ -26,6 +26,8 @@ from chessdk import (
     sq,
     file_of,
     rank_of,
+    DEFAULT_MOBILITY_WEIGHT,
+    BLACK,
 )
 
 
@@ -50,4 +52,17 @@ def evaluate(board: Board) -> int:
                 e -= PIECE_VALUE_KAUFMAN[piece]
                 pst -= DEFAULT_PSTS[piece][sq(file_of(n), 7 - rank_of(n))]
 
-    return e + pst
+    try:
+        if side == WHITE:
+            w = len(board.legal_moves())
+        else:
+            b = len(board.legal_moves())
+        board.state.side_to_move = side.other
+        if board.side_to_move == BLACK:
+            b = len(board.legal_moves())
+        else:
+            w = len(board.legal_moves())
+    finally:
+        board.state.side_to_move = side
+
+    return e + pst + (w - b) * DEFAULT_MOBILITY_WEIGHT

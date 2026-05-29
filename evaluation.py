@@ -48,6 +48,6 @@ def evaluate(board: Board) -> int:
                 pst += DEFAULT_PSTS[piece][n]
             else:
                 e -= PIECE_VALUE_KAUFMAN[piece]
-                pst += DEFAULT_PSTS[piece][sq(file_of(n), 7 - rank_of(n))]
+                pst -= DEFAULT_PSTS[piece][sq(file_of(n), 7 - rank_of(n))]
 
     return e + pst

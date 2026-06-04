@@ -58,6 +58,32 @@ class Board(BaseBoard):
                 if (kind is None) or piece.kind == kind:
                     yield (square, piece)
 
+    def pieces_of_file(
+        self, file: int, piece=None, color=None
+    ) -> list[tuple[int, Piece]] | None:
+        """
+        Returns (Square, Piece) tuples for each piece of the given color on the given file.
+
+        :param file: the file to search, from 0..7
+        :type file: int
+        :param color: the Color to search for
+        :return: (Square, Piece) tuples
+        :rtype: list[tuple[Square, Piece]]
+        """
+        if file not in range(0, 8):
+            return ValueError
+        fp = []
+        for i in range(file, file + 7 * 8 + 1, 8):
+            p = self.piece_at(i)
+            if not p:
+                continue
+            if piece is not None and p.kind != piece:
+                continue
+            if color is not None and p.color != color:
+                continue
+            fp.append((i, p))
+        return fp
+
     # === Stage 2: Leapers ===
 
     def _leaper_moves(self, color: Color, kind, offsets):

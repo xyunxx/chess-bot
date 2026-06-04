@@ -79,7 +79,7 @@ def evaluate(board: Board) -> int:
                         e += 15
                 if piece == PAWN:
                     file = file_of(n)
-                    if len(pieces_of_file(file, PAWN)) == 1:  # passed
+                    if not pieces_of_file(file, PAWN, BLACK):  # passed
                         if file > 0:
                             pf = pieces_of_file(file - 1, PAWN, BLACK)
                             if pf:
@@ -101,7 +101,7 @@ def evaluate(board: Board) -> int:
                                 if x == 1:
                                     break
                         e += passed_bonus_w[rank_of(n)]
-                    elif len(pieces_of_file(file, PAWN, WHITE)) == 2:  # doubled
+                    if len(pieces_of_file(file, PAWN, WHITE)) == 2:  # doubled
                         e -= 20
 
             else:
@@ -115,7 +115,7 @@ def evaluate(board: Board) -> int:
                         e -= 15
                 if piece == PAWN:
                     file = file_of(n)
-                    if len(pieces_of_file(file, PAWN)) == 1:  # passed
+                    if not pieces_of_file(file, PAWN, WHITE):  # passed
                         if file > 0:
                             pf = pieces_of_file(file - 1, PAWN, WHITE)
                             if pf:
@@ -137,7 +137,7 @@ def evaluate(board: Board) -> int:
                                 if x == 1:
                                     break
                         e -= passed_bonus_b[rank_of(n)]
-                    elif len(pieces_of_file(file, PAWN, BLACK)) == 2:  # doubled
+                    if len(pieces_of_file(file, PAWN, BLACK)) == 2:  # doubled
                         e += 20
 
     c = 0

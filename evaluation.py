@@ -89,6 +89,15 @@ def evaluate(board: Board) -> int:
             return 20
         return 0
 
+    def isolated_pawns(file: int, color: Color) -> int:
+        allied_pawns = (
+            board.pieces_of_file(file - 1, PAWN, color) if file - 1 >= 0 else []
+        ) + (board.pieces_of_file(file + 1, PAWN, color) if file + 1 <= 7 else [])
+
+        if not allied_pawns:
+            return 20
+        return 0
+
     def bishop_pair(color: Color) -> int:
         if len(list(board.pieces_of(color, BISHOP))) >= 2:
             return 50
@@ -115,14 +124,18 @@ def evaluate(board: Board) -> int:
             e += ros if color == WHITE else -ros
 
         if piece == PAWN:
-            # Passed pawn bonus
             file = file_of(n)
+            # Passed pawn bonus
             pp = passed_pawn(file, color)
             e += pp if color == WHITE else -pp
 
             # Doubled pawn penalty
             dp = doubled_pawns(file, color)
-            e += dp if color == WHITE else -dp
+            e += dp if color == BLACK else -dp
+
+            # Isolated pawn penalty
+            ip = isolated_pawns(file, color)
+            e += ip if color == BLACK else -ip
 
     # Bishop pair bonus
     e += bishop_pair(WHITE)

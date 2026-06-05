@@ -45,97 +45,88 @@ def evaluate(board: Board) -> int:
         else:  # stalemate
             return 0
 
+    def rook_open_semi(file: int, color: Color) -> int:
+        if not board.pieces_of_file(file, PAWN):  # open
+            return 30
+        elif not board.pieces_of_file(file, PAWN, color):  # semi
+            return 15
+        return 0
+
+    def passed_pawn(file: int, color: Color):
+        # Passed pawn bonus
+        passed_bonus_w = [0, 5, 10, 20, 40, 80, 160, 0]
+        passed_bonus_b = passed_bonus_w[::-1]
+        passed_pawn = True
+        opposing_pawns = (
+            board.pieces_of_file(file, PAWN, color.other)
+            + (
+                board.pieces_of_file(file - 1, PAWN, color.other)
+                if file - 1 >= 0
+                else []
+            )
+            + (
+                board.pieces_of_file(file + 1, PAWN, color.other)
+                if file + 1 <= 7
+                else []
+            )
+        )
+        if opposing_pawns:
+            for s, _ in opposing_pawns:
+                ranks = rank_of(s) - rank_of(n)
+                if (color == WHITE and ranks > 0) or (color == BLACK and ranks < 0):
+                    passed_pawn = False
+                    break
+        if passed_pawn:
+            return (
+                passed_bonus_w[rank_of(n)]
+                if color == WHITE
+                else passed_bonus_b[rank_of(n)]
+            )
+        return 0
+
+    def doubled_pawns(file: int, color: Color) -> int:
+        if len(board.pieces_of_file(file, PAWN, color)) >= 2:  # doubled
+            return 20
+        return 0
+
+    def bishop_pair(color: Color) -> int:
+        if len(list(board.pieces_of(color, BISHOP))) >= 2:
+            return 50
+        return 0
+
     e = 0
     pst = 0
-    passed_bonus_w = [0, 5, 10, 20, 40, 80, 160, 0]
-    passed_bonus_b = passed_bonus_w[::-1]
     for n, p in enumerate(board.pieces):
         if p is None:
             continue
         piece = p.kind
+        color = p.color
         if p.color == WHITE:
             e += PIECE_VALUE_KAUFMAN[piece]
             pst += DEFAULT_PSTS[piece][n]
-            if piece == ROOK:  # Rook on open file bonus
-                file = file_of(n)
-                if not board.pieces_of_file(file, PAWN):  # open
-                    e += 30
-                elif not board.pieces_of_file(file, PAWN, WHITE):  # semi
-                    # NOTE: Color swap
-                    e += 15
-            if piece == PAWN:
-                # Passed pawn bonus
-                file = file_of(n)
-                passed_pawn = True
-                # NOTE: color swap
-                opposing_pawns = (
-                    board.pieces_of_file(file, PAWN, BLACK)
-                    + (
-                        board.pieces_of_file(file - 1, PAWN, BLACK)
-                        if file - 1 >= 0
-                        else []
-                    )
-                    + (
-                        board.pieces_of_file(file + 1, PAWN, BLACK)
-                        if file + 1 <= 7
-                        else []
-                    )
-                )
-                # NOTE: color swap
-                if opposing_pawns:
-                    for s, _ in opposing_pawns:
-                        if rank_of(s) > rank_of(n):
-                            # NOTE: color swap
-                            passed_pawn = False
-                            break
-                if passed_pawn:
-                    e += passed_bonus_w[rank_of(n)]
-
-                # Doubled pawn penalty
-                if len(board.pieces_of_file(file, PAWN, WHITE)) >= 2:
-                    # NOTE: color swap
-                    e -= 20
         else:
             e -= PIECE_VALUE_KAUFMAN[piece]
             pst -= DEFAULT_PSTS[piece][sq(file_of(n), 7 - rank_of(n))]
-            if piece == ROOK:
-                file = file_of(n)
-                if not board.pieces_of_file(file, PAWN):
-                    e -= 30
-                elif not board.pieces_of_file(file, PAWN, BLACK):
-                    e -= 15
-            if piece == PAWN:
-                file = file_of(n)
-                if not board.pieces_of_file(file, PAWN, WHITE):  # passed
-                    if file > 0:
-                        opposing_pawns = board.pieces_of_file(file - 1, PAWN, WHITE)
-                        if opposing_pawns:
-                            x = 0
-                            for s, pce in opposing_pawns:
-                                if rank_of(s) < rank_of(n):
-                                    x = 1
-                                    break
-                            if x == 1:
-                                break
-                    if file < 7:
-                        opposing_pawns = board.pieces_of_file(file + 1, PAWN, WHITE)
-                        if opposing_pawns:
-                            x = 0
-                            for s, pce in opposing_pawns:
-                                if rank_of(s) < rank_of(n):
-                                    x = 1
-                                    break
-                            if x == 1:
-                                break
-                    e -= passed_bonus_b[rank_of(n)]
-                if len(board.pieces_of_file(file, PAWN, BLACK)) == 2:  # doubled
-                    e += 20
+
+        if piece == ROOK:
+            # Rook on open file bonus
+            file = file_of(n)
+            ros = rook_open_semi(file, color)
+            e += ros if color == WHITE else -ros
+
+        if piece == PAWN:
+            # Passed pawn bonus
+            file = file_of(n)
+            pp = passed_pawn(file, color)
+            e += pp if color == WHITE else -pp
+
+            # Doubled pawn penalty
+            dp = doubled_pawns(file, color)
+            e += dp if color == WHITE else -dp
 
     # Bishop pair bonus
-    if len(list(board.pieces_of(WHITE, BISHOP))) >= 2:
-        e += 50
-    if len(list(board.pieces_of(BLACK, BISHOP))) >= 2:
-        e -= 50
+    e += bishop_pair(WHITE)
+    e -= bishop_pair(BLACK)
 
     s1 = len(board.legal_moves())
     board.state.side_to_move = side.other

@@ -26,6 +26,7 @@ from chessdk import (
 )
 
 from evaluation import evaluate
+from search import search
 
 
 def perft(board: Board, depth: int) -> int:
@@ -39,4 +40,4 @@ def perft(board: Board, depth: int) -> int:
     return total
 
 
-print(evaluate(Board()))
+print(search(Board(), 3, Board()))

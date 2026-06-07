@@ -43,8 +43,14 @@ def search(
     best = None
     for m in board.legal_moves():
         board.make_move(m)
-        bm = search(board, depth - 1, eval_fn)
+        bm = search(board, depth - 1, eval_fn, alpha, beta)
         board.undo_move()
+
+        if bm[0] > 100_000:
+            bm = (bm[0] - 1, bm[1])
+        elif bm[0] < -100_000:
+            bm = (bm[0] + 1, bm[1])
+
         best = (
             (bm[0], m)
             if best is None
@@ -53,10 +59,12 @@ def search(
             else best
         )
 
-    if best[0] > 100_000:
-        best = (best[0] - 1, best[1])
-    elif best[0] < -100_000:
-        best = (best[0] + 1, best[1])
+        if board.side_to_move == WHITE:
+            alpha = max(alpha, bm[0])
+        else:
+            beta = min(beta, bm[0])
+        if alpha >= beta:
+            break
 
     return best
 

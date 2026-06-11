@@ -26,7 +26,7 @@ from chessdk import (
 )
 
 from evaluation import evaluate
-from search import search
+from search import search, order_moves
 
 
 def perft(board: Board, depth: int) -> int:
@@ -40,4 +40,8 @@ def perft(board: Board, depth: int) -> int:
     return total
 
 
-print(search(Board(), 3, Board()))
+board = Board().from_fen(
+    "rnb1kb1r/pp3ppp/2p2n2/q2pp3/Q2PP3/2P2N2/PP3PPP/RNB1KB1R w KQkq - 0 1"
+)
+
+print(order_moves(board, board.legal_moves()))

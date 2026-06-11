@@ -19,4 +19,4 @@ def choose_move(board: Board, time_left_ms: int) -> Move:
     `time_left_ms` is how many milliseconds you have remaining in the match.
     For Week 1 this function is unused; later weeks replace it with real logic.
     """
-    return search(board, 3, evaluate)[1]
+    return search(board, 4, evaluate)[1]

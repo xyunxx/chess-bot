@@ -18,7 +18,7 @@ from __future__ import annotations
 from typing import Callable
 
 from board import Board
-from chessdk import MATE_SCORE, Move, WHITE, BLACK
+from chessdk import MATE_SCORE, Move, WHITE, BLACK, PIECE_VALUE_CLASSIC
 
 
 def search(
@@ -30,18 +30,21 @@ def search(
 ) -> tuple[int, Move | None]:
     """Return ``(best_score_for_position, best_move)`` after searching to
     the given depth."""
-    if not board.legal_moves() and board.is_in_check():
+
+    legal_moves = board.legal_moves()
+
+    if not legal_moves and board.is_in_check():
         return (
             (+MATE_SCORE, None) if board.side_to_move == BLACK else (-MATE_SCORE, None)
         )
-    elif not board.legal_moves() and not board.is_in_check():
+    elif not legal_moves and not board.is_in_check():
         return (0, None)
 
     if depth == 0:
         return (eval_fn(board), None)
 
     best = None
-    for m in board.legal_moves():
+    for m in order_moves(board, legal_moves):
         board.make_move(m)
         bm = search(board, depth - 1, eval_fn, alpha, beta)
         board.undo_move()
@@ -71,4 +74,16 @@ def search(
 
 def order_moves(board: Board, moves: list[Move]) -> list[Move]:
     """Return ``moves`` sorted to put likely-strong moves first."""
-    raise NotImplementedError("order_moves: implement in Phase 5 (Stage 19)")
+    moves.sort(
+        key=lambda m: (
+            (
+                PIECE_VALUE_CLASSIC[board.pieces[m.to_sq].kind],
+                -PIECE_VALUE_CLASSIC[board.pieces[m.from_sq].kind],
+            )
+            if board.pieces[m.to_sq] is not None
+            else (0, 0)
+        ),
+        reverse=True,
+    )
+
+    return moves

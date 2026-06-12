@@ -10,7 +10,7 @@ import random
 from board import Board
 from chessdk import Move, PIECE_VALUE, min_attacker_value, PAWN, WHITE, BLACK
 from evaluation import evaluate
-from search import search
+import search
 
 
 def choose_move(board: Board, time_left_ms: int) -> Move:
@@ -19,4 +19,5 @@ def choose_move(board: Board, time_left_ms: int) -> Move:
     `time_left_ms` is how many milliseconds you have remaining in the match.
     For Week 1 this function is unused; later weeks replace it with real logic.
     """
-    return search(board, 4, evaluate)[1]
+    search.nodes_visited = 0
+    return search.search(board, 3, evaluate)[1]

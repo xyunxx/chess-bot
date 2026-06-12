@@ -142,9 +142,12 @@ def evaluate(board: Board) -> int:
     e -= bishop_pair(BLACK)
 
     s1 = len(board.legal_moves())
-    board.state.side_to_move = side.other
-    s2 = len(board.legal_moves())
-    board.state.side_to_move = side
+    s2 = 1
+
+    if not board.is_in_check(side):
+        board.state.side_to_move = side.other
+        s2 = len(board.legal_moves())
+        board.state.side_to_move = side
     mobility_bonus = (
         (s1 - s2)
         * (1 if board.state.side_to_move == WHITE else -1)

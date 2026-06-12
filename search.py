@@ -31,6 +31,9 @@ def search(
     """Return ``(best_score_for_position, best_move)`` after searching to
     the given depth."""
 
+    global nodes_visited
+    nodes_visited += 1
+
     legal_moves = board.legal_moves()
 
     if not legal_moves and board.is_in_check():

@@ -19,12 +19,14 @@ from typing import Callable
 
 from board import Board
 from chessdk import MATE_SCORE, Move, WHITE, BLACK, PIECE_VALUE_CLASSIC
+from evaluation import evaluate
 
 
 def search(
     board: Board,
     depth: int,
     eval_fn: Callable[[Board], int],
+    first_move: Move = None,
     alpha: int = -MATE_SCORE,
     beta: int = MATE_SCORE,
 ) -> tuple[int, Move | None]:
@@ -47,9 +49,9 @@ def search(
         return (eval_fn(board), None)
 
     best = None
-    for m in order_moves(board, legal_moves):
+    for m in order_moves(board, legal_moves, first_move):
         board.make_move(m)
-        bm = search(board, depth - 1, eval_fn, alpha, beta)
+        bm = search(board, depth - 1, eval_fn, first_move, alpha, beta)
         board.undo_move()
 
         if bm[0] > 100_000:
@@ -75,8 +77,14 @@ def search(
     return best
 
 
-def order_moves(board: Board, moves: list[Move]) -> list[Move]:
+def order_moves(board: Board, moves: list[Move], first_move: Move = None) -> list[Move]:
     """Return ``moves`` sorted to put likely-strong moves first."""
+    x = 0
+    if first_move in moves:
+        moves.remove(first_move)
+        first_move_list = []
+        first_move_list.append(first_move)
+        x = 1
     moves.sort(
         key=lambda m: (
             (
@@ -89,4 +97,22 @@ def order_moves(board: Board, moves: list[Move]) -> list[Move]:
         reverse=True,
     )
 
+    if x == 1:
+        return first_move_list + moves
+
     return moves
+
+
+def search_iterative(board: Board, eval_fn, max_depth: int) -> tuple[int, Move | None]:
+    best_moves = [(None, None)]
+    global nodes_visited
+    nodes_visited = 0
+    global last_depth
+    global last_score
+    count = 0
+    for n in range(1, max_depth + 1):
+        best_moves.append(search(board, n, eval_fn, best_moves[-1][1]))
+        count += 1
+    last_depth = count
+    last_score = best_moves[-1][0]
+    return best_moves[-1]

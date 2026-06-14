@@ -26,7 +26,7 @@ from chessdk import (
 )
 
 from evaluation import evaluate
-import search
+from search import search_iterative, search
 
 
 def perft(board: Board, depth: int) -> int:
@@ -40,7 +40,9 @@ def perft(board: Board, depth: int) -> int:
     return total
 
 
-board = Board().from_fen("r5k1/pR2bppp/8/4r3/1P2N3/2N1P1P1/P1P1B3/4K2R w K - 1 21")
+board = Board().from_fen(
+    "r1bqkb1r/pppp1ppp/2n2n2/4p3/4P3/2N2N2/PPPP1PPP/R1BQKB1R w KQkq - 4 4"
+)
 
-search.nodes_visited = 0
-print(search.search(board, 3, evaluate))
+print(search_iterative(board, evaluate, 2))
+print(search(board, 2, evaluate))

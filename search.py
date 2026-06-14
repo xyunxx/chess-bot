@@ -20,6 +20,7 @@ from typing import Callable
 from board import Board
 from chessdk import MATE_SCORE, Move, WHITE, BLACK, PIECE_VALUE_CLASSIC
 from evaluation import evaluate
+import time
 
 
 def search(
@@ -103,7 +104,10 @@ def order_moves(board: Board, moves: list[Move], first_move: Move = None) -> lis
     return moves
 
 
-def search_iterative(board: Board, eval_fn, max_depth: int) -> tuple[int, Move | None]:
+def search_iterative(
+    board: Board, eval_fn, max_depth: int, time_budget_ms: int = None
+) -> tuple[int, Move | None]:
+    elapsed = time.perf_counter()  # multiply by 1000 for ms
     best_moves = [(None, None)]
     global nodes_visited
     nodes_visited = 0
@@ -113,6 +117,8 @@ def search_iterative(board: Board, eval_fn, max_depth: int) -> tuple[int, Move |
     for n in range(1, max_depth + 1):
         best_moves.append(search(board, n, eval_fn, best_moves[-1][1]))
         count += 1
+        if elapsed * 1000 >= time_budget_ms:
+            break
     last_depth = count
     last_score = best_moves[-1][0]
     return best_moves[-1]

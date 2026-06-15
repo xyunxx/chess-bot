@@ -6,7 +6,6 @@ come back to this in Week 3 when we integrate UCI and submit to the tournament.
 
 from __future__ import annotations
 
-import random
 from board import Board
 from chessdk import Move, PIECE_VALUE, min_attacker_value, PAWN, WHITE, BLACK
 from evaluation import evaluate

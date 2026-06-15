@@ -27,6 +27,7 @@ from chessdk import (
 
 from evaluation import evaluate
 from search import search_iterative, search
+from bot import choose_move
 
 
 def perft(board: Board, depth: int) -> int:
@@ -40,9 +41,6 @@ def perft(board: Board, depth: int) -> int:
     return total
 
 
-board = Board().from_fen(
-    "r1bqkb1r/pppp1ppp/2n2n2/4p3/4P3/2N2N2/PPPP1PPP/R1BQKB1R w KQkq - 4 4"
-)
+board = Board()
 
-print(search_iterative(board, evaluate, 2))
-print(search(board, 2, evaluate))
+print(choose_move(board, 100000))

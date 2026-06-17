@@ -43,4 +43,4 @@ def perft(board: Board, depth: int) -> int:
 
 board = Board()
 
-print(choose_move(board, 100000))
+print(choose_move(board, 10000))

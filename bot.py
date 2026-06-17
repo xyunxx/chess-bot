@@ -7,9 +7,9 @@ come back to this in Week 3 when we integrate UCI and submit to the tournament.
 from __future__ import annotations
 
 from board import Board
-from chessdk import Move, PIECE_VALUE, min_attacker_value, PAWN, WHITE, BLACK
+from chessdk import Move, MATE_SCORE
 from evaluation import evaluate
-from search import search_iterative
+from search import search_iterative, quiesce
 
 
 def choose_move(board: Board, time_left_ms: int) -> Move:
@@ -20,4 +20,8 @@ def choose_move(board: Board, time_left_ms: int) -> Move:
     """
     budget = time_left_ms // 30 - 100
     budget = 100 if budget <= 100 else budget
-    return search_iterative(board, evaluate, 5, budget)[1]
+
+    def quiescent_eval(board):
+        return quiesce(board, -MATE_SCORE, MATE_SCORE, evaluate)
+
+    return search_iterative(board, quiescent_eval, 5, budget)[1]

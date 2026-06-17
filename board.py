@@ -533,6 +533,7 @@ class Board(BaseBoard):
             and self.pieces[square1] is not None
             and self.pieces[square1].kind == PAWN
             and self.pieces[square1].color == by_color
+            and abs(file_of(square) - file_of(square1)) == 1
         ):
             return True
 
@@ -541,6 +542,7 @@ class Board(BaseBoard):
             and self.pieces[square2] is not None
             and self.pieces[square2].kind == PAWN
             and self.pieces[square2].color == by_color
+            and abs(file_of(square) - file_of(square2)) == 1
         ):
             return True
 

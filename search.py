@@ -22,6 +22,9 @@ from chessdk import MATE_SCORE, Move, WHITE, BLACK, PIECE_VALUE_CLASSIC
 from evaluation import evaluate
 import time
 
+global nodes_visited
+nodes_visited = 0
+
 
 def search(
     board: Board,
@@ -110,7 +113,6 @@ def search_iterative(
     start = time.perf_counter()
     best_moves = [(None, None)]
     global nodes_visited
-    nodes_visited = 0
     global last_depth
     global last_score
     count = 0
@@ -126,3 +128,56 @@ def search_iterative(
     last_depth = count
     last_score = best_moves[-1][0]
     return best_moves[-1]
+
+
+def quiesce(board: Board, alpha: int, beta: int, eval_fn) -> int:
+    global nodes_visited
+    nodes_visited += 1
+
+    legal_moves = board.legal_moves()
+
+    if not legal_moves and board.is_in_check():
+        return +MATE_SCORE if board.side_to_move == BLACK else -MATE_SCORE
+    elif not legal_moves and not board.is_in_check():
+        return 0
+
+    captures = [m for m in board.legal_moves() if board.piece_at(m.to_sq) is not None]
+
+    stand_pat = eval_fn(board)
+
+    if not captures:
+        return stand_pat
+
+    if board.side_to_move == WHITE:
+        if stand_pat >= beta:
+            return stand_pat
+        if alpha < stand_pat:
+            alpha = stand_pat
+
+        for m in captures:
+            board.make_move(m)
+            nsp = quiesce(board, alpha, beta, eval_fn)
+            board.undo_move()
+            stand_pat = max(stand_pat, nsp)
+            if alpha < stand_pat:
+                alpha = stand_pat
+            if alpha >= beta:
+                return stand_pat
+
+    else:
+        if stand_pat <= alpha:
+            return stand_pat
+        if stand_pat < beta:
+            beta = stand_pat
+
+        for m in captures:
+            board.make_move(m)
+            nsp = quiesce(board, alpha, beta, eval_fn)
+            board.undo_move()
+            stand_pat = min(stand_pat, nsp)
+            if stand_pat < beta:
+                beta = stand_pat
+            if alpha >= beta:
+                return stand_pat
+
+    return stand_pat

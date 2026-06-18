@@ -19,5 +19,3 @@ for depth in (1, 2, 3, 4):
         f"depth {depth}: {search.nodes_visited:>9d} nodes "
         f"{elapsed:>6.2f}s {search.nodes_visited / elapsed:>10.0f} nps"
     )
-
-# The search with quiesence is much slower. The depth 2 quiescence is the same as depth 4 normal. Need to fix.

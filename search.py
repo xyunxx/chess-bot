@@ -111,20 +111,22 @@ def search_iterative(
     board: Board, eval_fn, max_depth: int, time_budget_ms: int = None
 ) -> tuple[int, Move | None]:
     start = time.perf_counter()
-    best_moves = [(None, None)]
+    best_moves = []
     global nodes_visited
     global last_depth
     global last_score
-    count = 0
-    for n in range(1, max_depth + 1):
-        best_moves.append(search(board, n, eval_fn, best_moves[-1][1]))
-        count += 1
+    count = 1
+    new_time_budget = time_budget_ms // 2.3 if time_budget_ms else None
+    best_moves.append(search(board, 1, eval_fn))
+    for n in range(2, max_depth + 1):
         if (
-            (time_budget_ms and (time.perf_counter() - start) * 1000 >= time_budget_ms)
+            (time_budget_ms and (time.perf_counter() - start) * 1000 >= new_time_budget)
             or best_moves[-1][0] > 100_000
             or best_moves[-1][0] < -100_000
         ):
             break
+        best_moves.append(search(board, n, eval_fn, best_moves[-1][1]))
+        count += 1
     last_depth = count
     last_score = best_moves[-1][0]
     return best_moves[-1]

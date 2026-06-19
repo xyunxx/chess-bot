@@ -55,7 +55,7 @@ def search(
     best = None
     for m in order_moves(board, legal_moves, first_move):
         board.make_move(m)
-        bm = search(board, depth - 1, eval_fn, first_move, alpha, beta)
+        bm = search(board, depth - 1, eval_fn, None, alpha, beta)
         board.undo_move()
 
         if bm[0] > 100_000:
@@ -84,12 +84,14 @@ def search(
 def order_moves(board: Board, moves: list[Move], first_move: Move = None) -> list[Move]:
     """Return ``moves`` sorted to put likely-strong moves first."""
     x = 0
-    if first_move in moves:
+    if first_move and first_move in moves:
         moves.remove(first_move)
         first_move_list = []
         first_move_list.append(first_move)
         x = 1
-    moves.sort(
+
+    sorted_moves = sorted(
+        moves,
         key=lambda m: (
             (
                 PIECE_VALUE_CLASSIC[board.pieces[m.to_sq].kind],
@@ -102,9 +104,9 @@ def order_moves(board: Board, moves: list[Move], first_move: Move = None) -> lis
     )
 
     if x == 1:
-        return first_move_list + moves
+        return first_move_list + sorted_moves
 
-    return moves
+    return sorted_moves
 
 
 def search_iterative(
@@ -115,8 +117,9 @@ def search_iterative(
     global nodes_visited
     global last_depth
     global last_score
+    nodes_visited = 0
     count = 1
-    new_time_budget = time_budget_ms // 2.6 if time_budget_ms else None
+    new_time_budget = time_budget_ms // 2.8 if time_budget_ms else None
     best_moves.append(search(board, 1, eval_fn))
     for n in range(2, max_depth + 1):
         if (

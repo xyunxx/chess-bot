@@ -41,6 +41,23 @@ from chessdk import (
 )
 from chessdk.base import BaseBoard
 
+a1 = 0
+b1 = 1
+c1 = 2
+d1 = 3
+e1 = 4
+f1 = 5
+g1 = 6
+h1 = 7
+a8 = 56
+b8 = 57
+c8 = 58
+d8 = 59
+e8 = 60
+f8 = 61
+g8 = 62
+h8 = 63
+
 
 class Board(BaseBoard):
     """A chess board with move generation. You implement the methods below."""
@@ -71,7 +88,7 @@ class Board(BaseBoard):
         :rtype: list[tuple[Square, Piece]]
         """
         if file not in range(0, 8):
-            return ValueError
+            raise ValueError
         fp = []
         for i in range(file, file + 7 * 8 + 1, 8):
             p = self.piece_at(i)
@@ -109,18 +126,6 @@ class Board(BaseBoard):
     def _king_moves(self, color: Color) -> list[Move]:
         """Pseudo-legal king moves for `color`."""
         castling = []
-        b1 = 1
-        c1 = 2
-        d1 = 3
-        e1 = 4
-        f1 = 5
-        g1 = 6
-        b8 = 57
-        c8 = 58
-        d8 = 59
-        e8 = 60
-        f8 = 61
-        g8 = 62
         if color == WHITE:
             if self.state.castling.white_kingside:
                 if self.pieces[f1] is None and self.pieces[g1] is None:
@@ -275,20 +280,6 @@ class Board(BaseBoard):
 
         move: must be a pseudo-legal move already
         """
-        a1 = 0
-        c1 = 2
-        d1 = 3
-        e1 = 4
-        f1 = 5
-        g1 = 6
-        h1 = 7
-        a8 = 56
-        c8 = 58
-        d8 = 59
-        e8 = 60
-        f8 = 61
-        g8 = 62
-        h8 = 63
         m = MoveRecord(
             move,
             self.pieces[move.to_sq],
@@ -339,7 +330,7 @@ class Board(BaseBoard):
             if (
                 move.from_sq == e1
                 and move.to_sq == g1
-                and next(self.pieces_of(WHITE, KING))[0] == g1
+                and self.pieces[move.to_sq].char == "K"
                 and self.state.castling.white_kingside
             ):
                 self.pieces[f1] = self.pieces[h1]
@@ -350,7 +341,7 @@ class Board(BaseBoard):
             elif (
                 move.from_sq == e1
                 and move.to_sq == c1
-                and next(self.pieces_of(WHITE, KING))[0] == c1
+                and self.pieces[move.to_sq].char == "K"
                 and self.state.castling.white_queenside
             ):
                 self.pieces[d1] = self.pieces[a1]
@@ -361,7 +352,7 @@ class Board(BaseBoard):
             elif (
                 move.from_sq == e8
                 and move.to_sq == g8
-                and next(self.pieces_of(BLACK, KING))[0] == g8
+                and self.pieces[move.to_sq].char == "k"
                 and self.state.castling.black_kingside
             ):
                 self.pieces[f8] = self.pieces[h8]
@@ -372,7 +363,7 @@ class Board(BaseBoard):
             elif (
                 move.from_sq == e8
                 and move.to_sq == c8
-                and next(self.pieces_of(BLACK, KING))[0] == c8
+                and self.pieces[move.to_sq].char == "k"
                 and self.state.castling.black_queenside
             ):
                 self.pieces[d8] = self.pieces[a8]
@@ -407,7 +398,11 @@ class Board(BaseBoard):
                     self.state.castling.black_kingside = False
 
         self.state.side_to_move = self.state.side_to_move.other
-        if self.pieces[move.to_sq].kind == PAWN or m.captured is not None:
+        if (
+            self.pieces[move.to_sq].kind == PAWN
+            or m.captured is not None
+            or move.promotion is not None
+        ):
             self.state.halfmove_clock = 0
         else:
             self.state.halfmove_clock += 1
@@ -428,20 +423,6 @@ class Board(BaseBoard):
 
     def undo_move(self) -> None:  # change to reset castling
         """Reverse the last make_move call."""
-        a1 = 0
-        c1 = 2
-        d1 = 3
-        e1 = 4
-        f1 = 5
-        g1 = 6
-        h1 = 7
-        a8 = 56
-        c8 = 58
-        d8 = 59
-        e8 = 60
-        f8 = 61
-        g8 = 62
-        h8 = 63
         m = self._history.pop()
         if m.move.promotion is not None:
             self.pieces[m.move.from_sq] = Piece(PAWN, self.state.side_to_move.other)
@@ -496,6 +477,7 @@ class Board(BaseBoard):
                     and self.pieces[sq(nf, nr)].color == by_color
                 ):
                     return True
+            return False
 
         if leapers(KNIGHT_OFFSETS, KNIGHT):
             return True

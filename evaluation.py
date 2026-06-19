@@ -68,7 +68,7 @@ def passed_pawn(board: Board, file: int, color: Color, n: int):
 
 def doubled_pawns(board: Board, file: int, color: Color) -> int:
     if len(board.pieces_of_file(file, PAWN, color)) >= 2:  # doubled
-        return 20
+        return 10  # Once for each pawn
     return 0
 
 
@@ -145,20 +145,23 @@ def evaluate(board: Board) -> int:
 
     e = evaluate_fast(board)
 
-    s1 = 1
-    if not board.is_in_check(side.other):
-        s1 = len(board.legal_moves())
+    try:
+        s1 = 1
+        if not board.is_in_check(side.other):
+            s1 = len(board.legal_moves())
 
-    s2 = 1
-    if not board.is_in_check(side):
-        board.state.side_to_move = side.other
-        s2 = len(board.legal_moves())
+        s2 = 1
+        if not board.is_in_check(side):
+            board.state.side_to_move = side.other
+            s2 = len(board.legal_moves())
+            board.state.side_to_move = side
+
+        mobility_bonus = (
+            (s1 - s2)
+            * (1 if board.state.side_to_move == WHITE else -1)
+            * DEFAULT_MOBILITY_WEIGHT
+        )
+    finally:
         board.state.side_to_move = side
-
-    mobility_bonus = (
-        (s1 - s2)
-        * (1 if board.state.side_to_move == WHITE else -1)
-        * DEFAULT_MOBILITY_WEIGHT
-    )
 
     return e + mobility_bonus

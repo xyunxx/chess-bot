@@ -35,74 +35,63 @@ from chessdk import (
 )
 
 
-def evaluate(board: Board) -> int:
-    """Return a centipawn score for the position from White's point of view."""
+def rook_open_semi(board: Board, file: int, color: Color) -> int:
+    if not board.pieces_of_file(file, PAWN):  # open
+        return 30
+    elif not board.pieces_of_file(file, PAWN, color):  # semi
+        return 15
+    return 0
+
+
+def passed_pawn(board: Board, file: int, color: Color, n: int):
+    # Passed pawn bonus
+    passed_bonus_w = [0, 5, 10, 20, 40, 80, 160, 0]
+    passed_bonus_b = passed_bonus_w[::-1]
+    passed_pawn = True
+    opposing_pawns = (
+        board.pieces_of_file(file, PAWN, color.other)
+        + (board.pieces_of_file(file - 1, PAWN, color.other) if file - 1 >= 0 else [])
+        + (board.pieces_of_file(file + 1, PAWN, color.other) if file + 1 <= 7 else [])
+    )
+    if opposing_pawns:
+        for s, _ in opposing_pawns:
+            ranks = rank_of(s) - rank_of(n)
+            if (color == WHITE and ranks > 0) or (color == BLACK and ranks < 0):
+                passed_pawn = False
+                break
+    if passed_pawn:
+        return (
+            passed_bonus_w[rank_of(n)] if color == WHITE else passed_bonus_b[rank_of(n)]
+        )
+    return 0
+
+
+def doubled_pawns(board: Board, file: int, color: Color) -> int:
+    if len(board.pieces_of_file(file, PAWN, color)) >= 2:  # doubled
+        return 20
+    return 0
+
+
+def isolated_pawns(board: Board, file: int, color: Color) -> int:
+    allied_pawns = (
+        board.pieces_of_file(file - 1, PAWN, color) if file - 1 >= 0 else []
+    ) + (board.pieces_of_file(file + 1, PAWN, color) if file + 1 <= 7 else [])
+
+    if not allied_pawns:
+        return 20
+    return 0
+
+
+def bishop_pair(board: Board, color: Color) -> int:
+    if len(list(board.pieces_of(color, BISHOP))) >= 2:
+        return 50
+    return 0
+
+
+def evaluate_fast(board: Board):
+    """Return a centipawn score for the position from White's point of view. Skips the terminal checks and the mobility score."""
 
     side = board.side_to_move
-    if board.legal_moves() == []:
-        if board.is_in_check():  # checkmate
-            return -MATE_SCORE if side == WHITE else MATE_SCORE
-        else:  # stalemate
-            return 0
-
-    def rook_open_semi(file: int, color: Color) -> int:
-        if not board.pieces_of_file(file, PAWN):  # open
-            return 30
-        elif not board.pieces_of_file(file, PAWN, color):  # semi
-            return 15
-        return 0
-
-    def passed_pawn(file: int, color: Color):
-        # Passed pawn bonus
-        passed_bonus_w = [0, 5, 10, 20, 40, 80, 160, 0]
-        passed_bonus_b = passed_bonus_w[::-1]
-        passed_pawn = True
-        opposing_pawns = (
-            board.pieces_of_file(file, PAWN, color.other)
-            + (
-                board.pieces_of_file(file - 1, PAWN, color.other)
-                if file - 1 >= 0
-                else []
-            )
-            + (
-                board.pieces_of_file(file + 1, PAWN, color.other)
-                if file + 1 <= 7
-                else []
-            )
-        )
-        if opposing_pawns:
-            for s, _ in opposing_pawns:
-                ranks = rank_of(s) - rank_of(n)
-                if (color == WHITE and ranks > 0) or (color == BLACK and ranks < 0):
-                    passed_pawn = False
-                    break
-        if passed_pawn:
-            return (
-                passed_bonus_w[rank_of(n)]
-                if color == WHITE
-                else passed_bonus_b[rank_of(n)]
-            )
-        return 0
-
-    def doubled_pawns(file: int, color: Color) -> int:
-        if len(board.pieces_of_file(file, PAWN, color)) >= 2:  # doubled
-            return 20
-        return 0
-
-    def isolated_pawns(file: int, color: Color) -> int:
-        allied_pawns = (
-            board.pieces_of_file(file - 1, PAWN, color) if file - 1 >= 0 else []
-        ) + (board.pieces_of_file(file + 1, PAWN, color) if file + 1 <= 7 else [])
-
-        if not allied_pawns:
-            return 20
-        return 0
-
-    def bishop_pair(color: Color) -> int:
-        if len(list(board.pieces_of(color, BISHOP))) >= 2:
-            return 50
-        return 0
-
     e = 0
     pst = 0
     for n, p in enumerate(board.pieces):
@@ -120,26 +109,41 @@ def evaluate(board: Board) -> int:
         if piece == ROOK:
             # Rook on open file bonus
             file = file_of(n)
-            ros = rook_open_semi(file, color)
+            ros = rook_open_semi(board, file, color)
             e += ros if color == WHITE else -ros
 
         if piece == PAWN:
             file = file_of(n)
             # Passed pawn bonus
-            pp = passed_pawn(file, color)
+            pp = passed_pawn(board, file, color, n)
             e += pp if color == WHITE else -pp
 
             # Doubled pawn penalty
-            dp = doubled_pawns(file, color)
+            dp = doubled_pawns(board, file, color)
             e += dp if color == BLACK else -dp
 
             # Isolated pawn penalty
-            ip = isolated_pawns(file, color)
+            ip = isolated_pawns(board, file, color)
             e += ip if color == BLACK else -ip
 
     # Bishop pair bonus
-    e += bishop_pair(WHITE)
-    e -= bishop_pair(BLACK)
+    e += bishop_pair(board, WHITE)
+    e -= bishop_pair(board, BLACK)
+
+    return e + pst
+
+
+def evaluate(board: Board) -> int:
+    """Return a centipawn score for the position from White's point of view."""
+
+    side = board.side_to_move
+    if board.legal_moves() == []:
+        if board.is_in_check():  # checkmate
+            return -MATE_SCORE if side == WHITE else MATE_SCORE
+        else:  # stalemate
+            return 0
+
+    e = evaluate_fast(board)
 
     s1 = 1
     if not board.is_in_check(side.other):
@@ -157,4 +161,4 @@ def evaluate(board: Board) -> int:
         * DEFAULT_MOBILITY_WEIGHT
     )
 
-    return e + pst + mobility_bonus
+    return e + mobility_bonus

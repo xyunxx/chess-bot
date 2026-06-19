@@ -116,7 +116,7 @@ def search_iterative(
     global last_depth
     global last_score
     count = 1
-    new_time_budget = time_budget_ms // 2.3 if time_budget_ms else None
+    new_time_budget = time_budget_ms // 2.6 if time_budget_ms else None
     best_moves.append(search(board, 1, eval_fn))
     for n in range(2, max_depth + 1):
         if (
@@ -143,7 +143,19 @@ def quiesce(board: Board, alpha: int, beta: int, eval_fn) -> int:
     elif not legal_moves and not board.is_in_check():
         return 0
 
-    captures = [m for m in board.legal_moves() if board.piece_at(m.to_sq) is not None]
+    opponent = board.side_to_move.other
+    captures = []
+    for m in legal_moves:
+        victim = board.piece_at(m.to_sq)
+        if victim is None:
+            continue  # not a capture, skip it
+        attacker = board.piece_at(m.from_sq)
+        wins_or_trades = (
+            PIECE_VALUE_CLASSIC[victim.kind] >= PIECE_VALUE_CLASSIC[attacker.kind]
+        )
+        target_undefended = not board.is_attacked(m.to_sq, opponent)
+        if wins_or_trades or target_undefended:
+            captures.append(m)
 
     stand_pat = eval_fn(board)
 

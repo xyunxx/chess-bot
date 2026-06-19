@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from board import Board
 from chessdk import Move, MATE_SCORE
-from evaluation import evaluate
+from evaluation import evaluate, evaluate_fast
 from search import search_iterative, quiesce
 
 
@@ -22,6 +22,6 @@ def choose_move(board: Board, time_left_ms: int) -> Move:
     budget = 100 if budget <= 100 else budget
 
     def quiescent_eval(board):
-        return quiesce(board, -MATE_SCORE, MATE_SCORE, evaluate)
+        return quiesce(board, -MATE_SCORE, MATE_SCORE, evaluate_fast)
 
     return search_iterative(board, quiescent_eval, 5, budget)[1]

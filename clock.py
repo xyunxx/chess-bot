@@ -2,11 +2,11 @@ import time
 from board import Board
 import search
 from chessdk import MATE_SCORE
-from evaluation import evaluate
+from evaluation import evaluate, evaluate_fast
 
 
 def quiescent_eval(b):
-    return search.quiesce(b, -MATE_SCORE, MATE_SCORE, evaluate)
+    return search.quiesce(b, -MATE_SCORE, MATE_SCORE, evaluate_fast)
 
 
 fen = "8/8/8/4k3/8/8/R7/4K3 w - - 0 1"  # White K+R vs a lone Black king

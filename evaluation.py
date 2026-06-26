@@ -22,14 +22,12 @@ from chessdk import (
     PIECE_VALUE_KAUFMAN,
     DEFAULT_PSTS,
     PAWN,
-    KING,
     sq,
     file_of,
     rank_of,
     DEFAULT_MOBILITY_WEIGHT,
     BLACK,
     BISHOP,
-    Piece,
     ROOK,
     Color,
 )
@@ -91,7 +89,6 @@ def bishop_pair(board: Board, color: Color) -> int:
 def evaluate_fast(board: Board):
     """Return a centipawn score for the position from White's point of view. Skips the terminal checks and the mobility score."""
 
-    side = board.side_to_move
     e = 0
     pst = 0
     for n, p in enumerate(board.pieces):

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from board import Board
 from chessdk import Move, MATE_SCORE
-from evaluation import evaluate, evaluate_fast
+from evaluation import evaluate_fast
 from search import search_iterative, quiesce
 
 
@@ -18,6 +18,7 @@ def choose_move(board: Board, time_left_ms: int) -> Move:
     `time_left_ms` is how many milliseconds you have remaining in the match.
     For Week 1 this function is unused; later weeks replace it with real logic.
     """
+    print("time left: ", time_left_ms)
     budget = time_left_ms // 30 - 100
     budget = 100 if budget <= 100 else budget
 

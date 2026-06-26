@@ -23,12 +23,10 @@ from chessdk import (
     KING_OFFSETS,
     KNIGHT,
     KNIGHT_OFFSETS,
-    Kind,
     Move,
     PAWN,
     Piece,
     QUEEN,
-    QUEEN_DIRECTIONS,
     ROOK,
     ROOK_DIRECTIONS,
     WHITE,
@@ -37,7 +35,6 @@ from chessdk import (
     rank_of,
     sq,
     MoveRecord,
-    square_name,
 )
 from chessdk.base import BaseBoard
 
@@ -105,7 +102,7 @@ class Board(BaseBoard):
 
     def _leaper_moves(self, color: Color, kind, offsets):
         pieces = self.pieces_of(color, kind)
-        l = list()
+        moves = list()
         for k, n in pieces:
             f = file_of(k)
             r = rank_of(k)
@@ -116,8 +113,8 @@ class Board(BaseBoard):
                 if on_board(file, rank) and (
                     self.piece_at(s) is None or self.piece_at(s).color != color
                 ):
-                    l.append(Move(k, s))
-        return l
+                    moves.append(Move(k, s))
+        return moves
 
     def _knight_moves(self, color: Color) -> list[Move]:
         """Pseudo-legal knight moves for `color`."""
@@ -500,6 +497,7 @@ class Board(BaseBoard):
                         or self.pieces[sq(nf, nr)].kind == QUEEN
                     ):
                         return True
+            return False
 
         if sliders(ROOK_DIRECTIONS, ROOK):
             return True

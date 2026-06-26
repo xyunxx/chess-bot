@@ -19,8 +19,8 @@ from typing import Callable
 
 from board import Board
 from chessdk import MATE_SCORE, Move, WHITE, BLACK, PIECE_VALUE_CLASSIC
-from evaluation import evaluate
 import time
+from random import randint
 
 global nodes_visited
 nodes_visited = 0
@@ -33,12 +33,20 @@ def search(
     first_move: Move = None,
     alpha: int = -MATE_SCORE,
     beta: int = MATE_SCORE,
+    deadline=None,
 ) -> tuple[int, Move | None]:
     """Return ``(best_score_for_position, best_move)`` after searching to
     the given depth."""
 
     global nodes_visited
     nodes_visited += 1
+
+    # if randint(0, 5) == 0:
+    #    print("here", nodes_visited, depth)
+    if deadline and randint(0, 100) == 0:
+        print(f"Checking deadline {deadline - time.time()} seconds from now")
+        if time.time() > deadline:
+            raise TimeoutError()
 
     legal_moves = board.legal_moves()
 
@@ -55,7 +63,7 @@ def search(
     best = None
     for m in order_moves(board, legal_moves, first_move):
         board.make_move(m)
-        bm = search(board, depth - 1, eval_fn, None, alpha, beta)
+        bm = search(board, depth - 1, eval_fn, None, alpha, beta, deadline)
         board.undo_move()
 
         if bm[0] > 100_000:
@@ -112,6 +120,7 @@ def order_moves(board: Board, moves: list[Move], first_move: Move = None) -> lis
 def search_iterative(
     board: Board, eval_fn, max_depth: int, time_budget_ms: int = None
 ) -> tuple[int, Move | None]:
+    print("time_budget_ms: ", time_budget_ms)
     start = time.perf_counter()
     best_moves = []
     global nodes_visited
@@ -119,7 +128,7 @@ def search_iterative(
     global last_score
     nodes_visited = 0
     count = 1
-    new_time_budget = time_budget_ms // 2.8 if time_budget_ms else None
+    new_time_budget = int(time_budget_ms / 2) if time_budget_ms else None
     best_moves.append(search(board, 1, eval_fn))
     for n in range(2, max_depth + 1):
         if (
@@ -128,7 +137,21 @@ def search_iterative(
             or best_moves[-1][0] < -100_000
         ):
             break
-        best_moves.append(search(board, n, eval_fn, best_moves[-1][1]))
+        try:
+            print("New time budget: ", new_time_budget)
+            best_moves.append(
+                search(
+                    board,
+                    n,
+                    eval_fn,
+                    best_moves[-1][1],
+                    deadline=(time.time() + new_time_budget) / 1000,
+                )
+            )
+        except TimeoutError as te:
+            # break out and just use the last depth
+            print(f"Exiting search early due to deadline {new_time_budget}")
+            break
         count += 1
     last_depth = count
     last_score = best_moves[-1][0]

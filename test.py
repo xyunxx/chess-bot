@@ -1,33 +1,4 @@
 from board import Board
-from chessdk import (
-    BISHOP,
-    BISHOP_DIRECTIONS,
-    BLACK,
-    Color,
-    KING,
-    KING_OFFSETS,
-    KNIGHT,
-    KNIGHT_OFFSETS,
-    Kind,
-    Move,
-    PAWN,
-    Piece,
-    QUEEN,
-    QUEEN_DIRECTIONS,
-    ROOK,
-    ROOK_DIRECTIONS,
-    WHITE,
-    file_of,
-    on_board,
-    rank_of,
-    sq,
-    parse_square,
-    MoveRecord,
-)
-
-from evaluation import evaluate
-from search import search_iterative, search
-from bot import choose_move
 
 
 def perft(board: Board, depth: int) -> int:
@@ -41,6 +12,6 @@ def perft(board: Board, depth: int) -> int:
     return total
 
 
-board = Board()
+board = Board().from_fen("8/8/8/8/8/4k3/8/4K2R w K - 0 1")
 
-print(choose_move(board, 10000))
+print(board.legal_moves())

@@ -41,10 +41,7 @@ def search(
     global nodes_visited
     nodes_visited += 1
 
-    # if randint(0, 5) == 0:
-    #    print("here", nodes_visited, depth)
     if deadline and randint(0, 100) == 0:
-        print(f"Checking deadline {deadline - time.time()} seconds from now")
         if time.time() > deadline:
             raise TimeoutError()
 
@@ -120,7 +117,6 @@ def order_moves(board: Board, moves: list[Move], first_move: Move = None) -> lis
 def search_iterative(
     board: Board, eval_fn, max_depth: int, time_budget_ms: int = None
 ) -> tuple[int, Move | None]:
-    print("time_budget_ms: ", time_budget_ms)
     start = time.perf_counter()
     best_moves = []
     global nodes_visited
@@ -138,19 +134,29 @@ def search_iterative(
         ):
             break
         try:
-            print("New time budget: ", new_time_budget)
-            best_moves.append(
-                search(
-                    board,
-                    n,
-                    eval_fn,
-                    best_moves[-1][1],
-                    deadline=(time.time() + new_time_budget) / 1000,
+            if new_time_budget:
+                best_moves.append(
+                    search(
+                        board,
+                        n,
+                        eval_fn,
+                        best_moves[-1][1],
+                        deadline=time.time() + new_time_budget / 1000
+                        if new_time_budget
+                        else None,
+                    )
                 )
-            )
+            else:
+                best_moves.append(
+                    search(
+                        board,
+                        n,
+                        eval_fn,
+                        best_moves[-1][1],
+                    )
+                )
         except TimeoutError as te:
             # break out and just use the last depth
-            print(f"Exiting search early due to deadline {new_time_budget}")
             break
         count += 1
     last_depth = count

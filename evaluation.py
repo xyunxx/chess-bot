@@ -19,8 +19,6 @@ from board import Board
 from chessdk import (
     MATE_SCORE,
     WHITE,
-    PIECE_VALUE_KAUFMAN,
-    DEFAULT_PSTS,
     PAWN,
     sq,
     file_of,
@@ -30,6 +28,12 @@ from chessdk import (
     BISHOP,
     ROOK,
     Color,
+    MG_PST,
+    EG_VALUE,
+    MG_VALUE,
+    EG_PST,
+    game_phase,
+    PHASE_MAX,
 )
 
 
@@ -90,18 +94,23 @@ def evaluate_fast(board: Board):
     """Return a centipawn score for the position from White's point of view. Skips the terminal checks and the mobility score."""
 
     e = 0
-    pst = 0
+    phase = game_phase(board)
     for n, p in enumerate(board.pieces):
         if p is None:
             continue
         piece = p.kind
         color = p.color
-        if p.color == WHITE:
-            e += PIECE_VALUE_KAUFMAN[piece]
-            pst += DEFAULT_PSTS[piece][n]
+        if color == WHITE:
+            mg = MG_VALUE[piece] + MG_PST[piece][n]
+            eg = EG_VALUE[piece] + EG_PST[piece][n]
+            value = (mg * phase + eg * (PHASE_MAX - phase)) // PHASE_MAX
+            e += value
         else:
-            e -= PIECE_VALUE_KAUFMAN[piece]
-            pst -= DEFAULT_PSTS[piece][sq(file_of(n), 7 - rank_of(n))]
+            new_square = sq(file_of(n), 7 - rank_of(n))
+            mg = MG_VALUE[piece] + MG_PST[piece][new_square]
+            eg = EG_VALUE[piece] + EG_PST[piece][new_square]
+            value = (mg * phase + eg * (PHASE_MAX - phase)) // PHASE_MAX
+            e -= value
 
         if piece == ROOK:
             # Rook on open file bonus
@@ -127,7 +136,7 @@ def evaluate_fast(board: Board):
     e += bishop_pair(board, WHITE)
     e -= bishop_pair(board, BLACK)
 
-    return e + pst
+    return e
 
 
 def evaluate(board: Board) -> int:

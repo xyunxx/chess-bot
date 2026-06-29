@@ -35,7 +35,12 @@ from chessdk import (
     rank_of,
     sq,
     MoveRecord,
+    PIECE_KEYS,
+    SIDE_KEY,
+    CASTLE_KEYS,
+    EP_FILE_KEYS,
 )
+
 from chessdk.base import BaseBoard
 
 a1 = 0
@@ -544,3 +549,22 @@ class Board(BaseBoard):
                 legal.append(m)
             self.undo_move()
         return legal
+
+    def zobrist_hash(self) -> int:
+        zobrist = 0
+        for n, p in enumerate(self.pieces):
+            if p is not None:
+                zobrist ^= PIECE_KEYS[p.color * 6 + p.kind][n]
+        if self.side_to_move == BLACK:
+            zobrist ^= SIDE_KEY
+        if self.state.castling.white_kingside:
+            zobrist ^= CASTLE_KEYS[0]
+        if self.state.castling.white_queenside:
+            zobrist ^= CASTLE_KEYS[1]
+        if self.state.castling.black_kingside:
+            zobrist ^= CASTLE_KEYS[2]
+        if self.state.castling.black_queenside:
+            zobrist ^= CASTLE_KEYS[3]
+        if self.en_passant is not None:
+            zobrist ^= EP_FILE_KEYS[file_of(self.en_passant)]
+        return zobrist
